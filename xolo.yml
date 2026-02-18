@@ -1,6 +1,6 @@
 services:
  xolo-db:
-  image: mongo:6-jammy
+  image: mongo:8-noble
   ports:
     - ${XOLO_MONGODB_PORT:-27018}:27017
   volumes:
