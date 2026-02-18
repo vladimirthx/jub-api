@@ -12,13 +12,13 @@ from jubapi.services import ProductsService,ObservatoriesService,CatalogsService
 from jubapi.dto.product import ProductDTO
 from jubapi.dto.catalog import CatalogDTO
 from jubapi.dto import ProductFilter
-# CatalogsService
 from jubapi.log.log import Log
-LOG_DEBUG = bool(int(os.environ.get("LOG_DEBUG","1")))
+import jubapi.config as CX
+# LOG_DEBUG = bool(int(os.environ.get("LOG_DEBUG","1")))
 log = Log(
-    name=os.environ.get("PRODUCTS_LOG_NAME","oca_products"),
-    path=os.environ.get("JUB_LOG_PATH","/log"),
-    console_handler_filter= lambda x : LOG_DEBUG
+    name                   = __name__,
+    path                   = CX.JUB_LOG_PATH,
+    console_handler_filter = lambda x : CX.JUB_LOG_DEBUG
 )
 
 router = APIRouter()

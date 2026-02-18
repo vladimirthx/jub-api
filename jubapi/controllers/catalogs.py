@@ -9,12 +9,12 @@ from jubapi.repositories.catalog import CatalogsRepository
 from jubapi.db import get_collection
 from jubapi.services import CatalogsService
 from jubapi.log.log import Log
-LOG_DEBUG = bool(int(os.environ.get("LOG_DEBUG","1")))
+import jubapi.config as CX
 
 log = Log(
-    name=os.environ.get("CATALOGS_LOG_NAME","oca_catalogs"),
-    path=os.environ.get("JUB_LOG_PATH","/log"),
-    console_handler_filter= lambda x : LOG_DEBUG
+    name                   = __name__,
+    path                   = CX.JUB_LOG_PATH,
+    console_handler_filter = lambda x : CX.JUB_LOG_DEBUG
 )
 
 router = APIRouter(prefix="/catalogs", tags=["catalogs"])

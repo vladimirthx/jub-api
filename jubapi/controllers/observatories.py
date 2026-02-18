@@ -9,11 +9,11 @@ from jubapi.repositories.observatory import ObservatoriesRepository
 from jubapi.db import get_collection
 from jubapi.services import ObservatoriesService
 from jubapi.log.log import Log
-LOG_DEBUG = bool(int(os.environ.get("LOG_DEBUG","1")))
+import jubapi.config as CX
 log = Log(
-    name=os.environ.get("LOG_NAME","ocapi"),
-    path=os.environ.get("JUB_LOG_PATH","/log"),
-    console_handler_filter= lambda x : LOG_DEBUG
+    name                   = __name__,
+    path                   = CX.JUB_LOG_PATH,
+    console_handler_filter = lambda x : CX.JUB_LOG_DEBUG
 )
 
 router = APIRouter()
