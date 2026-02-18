@@ -12,6 +12,8 @@ on:
 jobs:  
   build:  
     runs-on: ubuntu-latest  
+    env:
+      JUB_LOG_PATH: ${{ github.workspace }}/log
     strategy:  
       matrix:  
         python-version: ["3.10"]  
@@ -28,6 +30,8 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           virtualenvs-path: .venv
+      - name: Prepare log folder
+        run: mkdir -p "${JUB_LOG_PATH}"
       - name: Start Jub Service
         run: |
           chmod +x deploy.sh && ./deploy.sh
@@ -44,8 +48,6 @@ jobs:
       - name: Test with pytest  
         run: |  
           poetry run coverage run -m pytest  -v -s  
-        env:
-          LOG_PATH: log  
       - name: Generate Coverage Report  
         run: |  
           poetry run coverage report -m
