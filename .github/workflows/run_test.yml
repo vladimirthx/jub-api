@@ -24,10 +24,7 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH  # Ensure poetry is on PATH
-      # - name: Prepare log folder
-        # run: |
-          # mkdir -p "${MICTLANX_LOG_PATH}"
+          poetry --version
       - name: Start Jub Service
         run: |
           chmod +x deploy.sh && ./deploy.sh
