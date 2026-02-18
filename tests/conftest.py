@@ -1,21 +1,22 @@
 import asyncio
 import pytest
 
-from jubapi.db import get_collection,connect_to_mongo,close_mongo_connection
+from jubapi.db import connect_to_mongo,close_mongo_connection
+from dotenv import load_dotenv
+import os
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create a session-wide event loop."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+ENV_FILE_PATH = os.environ.get("ENV_FILE_PATH", ".env.test")
+if os.path.exists(ENV_FILE_PATH):
+    load_dotenv(ENV_FILE_PATH)
+
+
 
 async def connect_to_database():
     print("Connecting to the database...")
     await connect_to_mongo()
     # await asyncio.sleep(0.1)  # simulate async connection
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture( autouse=True)
 async def before_all(event_loop):
     await connect_to_database()
     print("Database connected before tests")

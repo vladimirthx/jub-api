@@ -2,14 +2,14 @@ import pytest
 from jubapi.server import app
 from fastapi.testclient import TestClient
 from jubapi.models import Catalog,CatalogKind,CatalogItem
-
+from uuid import uuid4
 client = TestClient(app)
 
 @pytest.mark.asyncio
 async def test_api_create_catalog():
     # Create a new catalog DTO
     catalog = Catalog(
-        cid="apicatalogcid",
+        cid=uuid4().hex[:8],
         display_name="TEST CATALOG",
         kind=CatalogKind.INTEREST,
         items=[
@@ -23,7 +23,7 @@ async def test_api_create_catalog():
             ),
         ]
     )
-    response = client.post("/v1/catalogs", json=catalog.model_dump())
+    response = client.post("/catalogs", json=catalog.model_dump())
     
     print(response.json())
     assert response.status_code == 200, "API request failed"
