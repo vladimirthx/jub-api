@@ -64,7 +64,7 @@ def generate_openapi():
 app.openapi = generate_openapi
 
 app.include_router(observatories_router)
-app.include_router(catalogs_router,prefix="/v1")
+app.include_router(catalogs_router)
 app.include_router(products_router)
 app.include_router(observatory_router_v2)
 app.include_router(xvariable_router)

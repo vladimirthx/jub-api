@@ -1,8 +1,7 @@
 import os
 import time as T
 from typing import List
-from fastapi import APIRouter,Depends
-from fastapi import Response,HTTPException
+from fastapi import APIRouter,Depends,Response,HTTPException
 from jubapi.dto.catalog import CatalogDTO
 from jubapi.services import CatalogsService
 # 
@@ -27,7 +26,7 @@ def get_service()->CatalogsService:
     return service
 
 
-@router.post("/")
+@router.post("")
 async def create_catalogs(
     catalog:CatalogDTO, 
     catalog_service:CatalogsService= Depends(get_service) 
@@ -69,7 +68,7 @@ async def delete_catalogs(cid:str, catalog_service:CatalogsService= Depends(get_
         response =await catalog_service.delete_by_cid(cid=cid)
         return Response(content=None, status_code=204)
 
-@router.get("/")
+@router.get("")
 async def get_catalogs(skip:int = 0, limit:int = 10, catalog_service:CatalogsService= Depends(get_service)):
     result= await catalog_service.find_all(skip=skip,limit=limit)
     if result.is_ok:
