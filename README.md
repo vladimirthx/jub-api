@@ -34,7 +34,8 @@ To deploy all services required for the system to function properly:
 ```sh
 chmod +x ./deploy.sh && ./deploy.sh
 ```
-### MongoDB Cluster
+
+### MongoDB Cluster (Optional)
 #### 1. 🔑 Create MongoDB Keyfile
 You must use the script ```db/createkey.sh``` ⚠️ Please execute this command insde the ```db/``` folder, if you dont execute it in that path, you should move the ```keyfile``` to ```db/```. 
 
@@ -61,7 +62,6 @@ net:
 ```sh
 docker compose -f cluster.yml up -d
 ```
-
 #### 4. 🧠 Create Admin User
 Enter to the first mongodb node  ⚠️ update the ```<container_id``` with the actual identifier of the container running at 27017:
 
