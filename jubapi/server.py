@@ -58,11 +58,11 @@ def generate_openapi():
     return app.openapi_schema
 app.openapi = generate_openapi
 
-app.include_router(observatories_router)
-app.include_router(catalogs_router)
-app.include_router(products_router)
-app.include_router(observatory_router_v2)
-app.include_router(xvariable_router)
-app.include_router(nameservice_router)
-app.include_router(product_router_v2)
-app.include_router(v3_router)
+app.include_router(observatories_router,tags=["observatories"])
+app.include_router(catalogs_router,tags=["catalogs"])
+app.include_router(products_router,tags=["products"])
+app.include_router(observatory_router_v2,tags=["observatories_v2"])
+app.include_router(xvariable_router,tags=["xvariables"])
+app.include_router(nameservice_router,tags=["nameservices"])
+app.include_router(product_router_v2,tags=["products_v2"])
+app.include_router(v3_router,tags=["v3"])
