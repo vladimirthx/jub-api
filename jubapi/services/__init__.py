@@ -119,6 +119,14 @@ class ObservatoriesService:
 
 
 class ProductsService:
+    """
+    Service class for managing products. Handles business logic and interactions between the ProductsRepository, ObservatoriesService, and CatalogsService.
+    
+    Attributes:
+        repository (ProductsRepository): Repository for product data access.
+        observatory_service (ObservatoriesService): Service for managing observatories, used for filtering products based on observatory catalogs.
+        catalog_service (CatalogsService): Service for managing catalogs, used for retrieving catalog details during product filtering.
+    """
     def __init__(
             self, 
             repository:ProductsRepository,
@@ -131,6 +139,20 @@ class ProductsService:
         self.catalog_service = catalog_service
     
     async def create(self,product:ProductDTO)->Result[str, OcaError]:
+        """Create a new product in the system.
+        Args:
+            product (ProductDTO): 
+                Data transfer object containing product details.
+        
+        Returns:
+            Result: 
+                - Ok (str): The unique identifier (pid) of the created product if successful.
+                - Err (OcaError): An error object containing details about why the creation failed.
+        Raises:
+            OcaError:
+                - AlreadyExists: If a product with the same pid already exists.
+                - UknownError: If an unexpected error occurs during product creation.
+        """
         try:
             model = Product(
                 description=product.description,

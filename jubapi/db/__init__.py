@@ -17,6 +17,7 @@ def get_collection(name:str)->AsyncIOMotorCollection:
 async def connect_to_mongo():
     global client
     client = AsyncIOMotorClient(CX.JUB_MONGODB_URI)
+    print(f"MongoDB connection established. URI: {CX.JUB_MONGODB_URI}")
 
 # Shutdown event to close the MongoClient when the application shuts down
 async def close_mongo_connection():

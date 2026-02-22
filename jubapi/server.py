@@ -9,10 +9,6 @@ from jubapi.controllers import observatories_router,catalogs_router,products_rou
 from jubapi.controllers.v2 import observatory_router_v2,xvariable_router,nameservice_router,product_router_v2
 import jubapi.config as CX
 
-# JUB_ENV_PATH = os.getenv("JUBAPI_ENV_PATH","./.env")
-# if os.path.exists(JUB_ENV_PATH):
-#     load_dotenv(JUB_ENV_PATH)
-
 log       = Log(
     name                   = CX.JUB_LOG_NAME,  
     path                   = CX.JUB_LOG_PATH,
