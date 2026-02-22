@@ -22,6 +22,12 @@ body:
       label: Goal
       description: What is the intended outcome?
       placeholder: "Improve performance, fix maintainability ..."
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resources
+      description: Links to relevant documentation, code, or discussions.
+      placeholder: "Link to design doc, related PR or any external resources..."
 
   - type: checkboxes
     id: acceptance
