@@ -5,9 +5,12 @@ from jubapi.db import connect_to_mongo,close_mongo_connection
 from dotenv import load_dotenv
 import os
 
-ENV_FILE_PATH = os.environ.get("ENV_FILE_PATH", ".env.test")
-if os.path.exists(ENV_FILE_PATH):
-    load_dotenv(ENV_FILE_PATH)
+JUB_ENV_FILE_PATH = os.environ.get("JUB_ENV_FILE_PATH", ".env.test")
+env_exists        = os.path.exists(JUB_ENV_FILE_PATH)
+
+print(f"Loading environment variables from: {JUB_ENV_FILE_PATH} - Exists: {env_exists}")
+if env_exists:
+    load_dotenv(JUB_ENV_FILE_PATH, override=True)
 
 
 
@@ -17,7 +20,7 @@ async def connect_to_database():
     # await asyncio.sleep(0.1)  # simulate async connection
 
 @pytest.fixture( autouse=True)
-async def before_all(event_loop):
+async def before_all():
     await connect_to_database()
     print("Database connected before tests")
     yield 
