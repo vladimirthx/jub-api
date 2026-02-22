@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest  
     env:
       JUB_LOG_PATH: ${{ github.workspace }}/log
+      JUB_DEPLOY_ENV_FILE_PATH: ${{ github.workspace }}/.env.dev
       JUB_ENV_FILE_PATH: ${{ github.workspace }}/.env.test
     strategy:  
       matrix:  
@@ -61,9 +62,9 @@ jobs:
 
       - name: Start Jub Service
         run: |
-          chmod +x deploy.sh && ./deploy.sh ${{ env.JUB_ENV_FILE_PATH || '.env.test' }}
+          chmod +x deploy.sh && ./deploy.sh ${{ env.JUB_DEPLOY_ENV_FILE_PATH || '.env.dev' }}
         env:
-          JUB_ENV_FILE_PATH: ${{ env.ACT == 'true' && env.JUB_ENV_FILE_PATH || '.env.test' }}
+          JUB_ENV_FILE_PATH: ${{ env.ACT == 'true' && env.JUB_DEPLOY_ENV_FILE_PATH || '.env.dev' }}
 
       - name: Lint with Ruff  
         run: |  
