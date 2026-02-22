@@ -2,7 +2,7 @@ services:
  jub-db:
   image: mongo:6-jammy
   ports:
-    - ${JUB_MONGODB_PORT:-27027}:27017
+    - ${JUB_MONGODB_HOST_PORT:-27027}:27017
   volumes:
     - jub-db:/data/db
   networks:
@@ -26,5 +26,6 @@ services:
 
 networks:
   jub:
+    external: true
 volumes:
   jub-db:
