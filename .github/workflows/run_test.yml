@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest  
     env:
       JUB_LOG_PATH: ${{ github.workspace }}/log
-      JUB_ENV_FILE_PATH: ${{ env.ACT == 'true' && env.JUB_ENV_FILE_PATH || '.env.test' }}
+      JUB_ENV_FILE_PATH: ${{ github.workspace }}/.env.test
     strategy:  
       matrix:  
         python-version: ["3.10"]  
