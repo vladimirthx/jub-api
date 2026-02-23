@@ -2,7 +2,7 @@ services:
  jub-db:
   image: mongo:6-jammy
   ports:
-    - ${JUB_MONGODB_PORT:-27027}:27017
+    - ${JUB_MONGODB_HOST_PORT:-27027}:27017
   volumes:
     - jub-db:/data/db
   networks:
@@ -17,7 +17,7 @@ services:
   env_file:
     - .env.dev
   ports:
-    - 5000:5000
+    - ${JUB_PORT:-5000}:${JUB_PORT:-5000}
   networks:
     - jub
   command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-5000} --reload
@@ -26,5 +26,6 @@ services:
 
 networks:
   jub:
+    external: true
 volumes:
   jub-db:

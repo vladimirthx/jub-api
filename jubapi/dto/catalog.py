@@ -1,5 +1,6 @@
 from typing import Dict,Union,List,Optional
 from pydantic import BaseModel
+
 class CatalogItemDTO(BaseModel):
     value:str         
     display_name:str
@@ -12,3 +13,4 @@ class CatalogDTO(BaseModel):
     display_name:str 
     items:Optional[List[CatalogItemDTO]]=[]
     kind:str
+

@@ -1,17 +1,18 @@
-# OCA - API
-OCA is a backend API designed to support catalogs, querying, and data management for observatories and contextual variables. It provides an extensible architecture for working with scientific data products, metadata models, and semantic queries using a custom query language.
+# JUB - API
+JUB is a backend API designed to support catalogs, querying, and data management for observatories and contextual variables. It provides an extensible architecture for working with scientific data products, metadata models, and semantic queries using a custom query language.
 
 
 ## 📦 Project Structure
 ```
-├── jubapi/ # FastAPI server with controller/service/repository structure
-
+├── jubapi/ # FastAPI server with controller/service/repository/models structure
+├── .github/ # GitHub Actions CI/CD workflows
+├── assets/ # Images, diagrams, and other media assets for documentation
 ├── db/ # MongoDB cluster config, scripts, keyfile
-├── docs/ # Markdown documentation (arch, model, etc.)
+├── docs/ # Deployable markdown documentation
 ├── tests/ # Pytest test suite
-├── docker-compose.yml # OCA API definition
-├── cluster.yml # MongoDB cluster definition
-├── deploy.sh # Script for full deployment
+├── docker-compose.yml # IaC to deploy an instance of the API and MongoDB
+├── cluster.yml # MongoDB cluster IaC
+├── deploy.sh # All-in-one script for full deployment
 ├── run_local.sh # Script to launch local dev server
 ├── pyproject.toml # Poetry project file
 └── mkdocs.yml # MkDocs configuration for documentation
@@ -24,18 +25,20 @@ Before running the project, install dependencies and activate the development en
 
 ```sh
 poetry install && poetry lock
+poetry self add poetry-plugin-shell
 poetry shell
 ```
 
-### Full Deployment
+### Deployment
 
 To deploy all services required for the system to function properly:
 
 ```sh
 chmod +x ./deploy.sh && ./deploy.sh
 ```
-### MongoDB Cluster
-#### 1. 🔑 Create MongoDB Keyfile
+
+#### MongoDB Cluster (Optional)
+##### 1. 🔑 Create MongoDB Keyfile
 You must use the script ```db/createkey.sh``` ⚠️ Please execute this command insde the ```db/``` folder, if you dont execute it in that path, you should move the ```keyfile``` to ```db/```. 
 
 
@@ -43,7 +46,7 @@ You must use the script ```db/createkey.sh``` ⚠️ Please execute this command
 cd db && chmod +x ./createkey.sh && ./createkey.sh
 
 ```
-#### 2. ⚙️ Configure MongoDB
+##### 2. ⚙️ Configure MongoDB
 ```conf
 #replication:
 #  replSetName: rs0
@@ -56,13 +59,12 @@ net:
   #authorization: enabled
   #keyFile: /etc/mongo/keyfile
 ```
-#### 3. 🐳 Start MongoDB Cluster
+##### 3. 🐳 Start MongoDB Cluster
 
 ```sh
 docker compose -f cluster.yml up -d
 ```
-
-#### 4. 🧠 Create Admin User
+##### 4. 🧠 Create Admin User
 Enter to the first mongodb node  ⚠️ update the ```<container_id``` with the actual identifier of the container running at 27017:
 
 Find the container running MongoDB on port 27017:
@@ -110,7 +112,7 @@ You should see something like:
   ok: 1
 }
 ```
-#### 5. 🔒 Enable Authentication
+##### 5. 🔒 Enable Authentication
 
 
 ```sh
@@ -137,7 +139,7 @@ Restart the cluster:
 docker compose -f cluster.yml up -d
 ```
 
-#### 6. 🔐 Test Authentication
+##### 6. 🔐 Test Authentication
 
 Then verify if you can logging try first to get inside the terminal of the mongo db at ```27017``` and in the terminal of the mongo db execute this: 
 
@@ -145,6 +147,12 @@ Then verify if you can logging try first to get inside the terminal of the mongo
 mongosh -u oca -p d22a75e9e729debc --authenticationDatabase admin
 ```
 you must authenticated correctly. if you cannot authenticated please try again from the step (5)
+
+
+
+
+
+
 
 ## 🚀 Start the API Server
 
@@ -167,18 +175,27 @@ mkdocs serve
 ```
 
 ## 🧪 Tests
+⚠️ Remember to point `JUB_ENV_FILE_PATH` to the correct `.env` file before running tests. The default value is `./.env.test` but if you are running tests from another path, you should update this variable to point to the correct path of the `.env` file.
 
 ```
 pytest tests/<name_of_test_file>.py -s -vvvv
 ```
 
+to check coverage:
+
+```
+coverage run -m pytest tests/<name_of_test_file>.py -s -vvvv
+
+coverage report -m
+```
+
 ### 🧾 License
-MIT License
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
 
 
 ## 🤝 Contributing
 
-Contributions are welcome and encouraged!
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 To contribute to this project:
 
@@ -189,8 +206,8 @@ To contribute to this project:
 2. **Clone Your Fork**
 
     ```bash
-      git clone https://github.com/<your-username>/oca.git
-      cd oca
+      git clone https://github.com/<your-username>/jubapi.git
+      cd jubapi
     ```
 3. Create a New Branch
 Use a descriptive branch name based on your contribution:
@@ -246,3 +263,10 @@ Once you've committed your changes locally, you need to upload (push) them to yo
 8. ✅ Wait for Review
 
     Your changes will be reviewed, and you may be asked to make adjustments before merging.
+
+  
+# ️Code of Conduct
+We expect all contributors to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a welcoming and inclusive community.
+
+# Contact
+For questions or support, please open an issue or contact us at [jesus.castillo.b@civnestav.mx](mailto:jesus.castillo.b@civnestav.mx).
