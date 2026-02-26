@@ -1,4 +1,4 @@
-#Current Data Model
+# Current Data Model
 
 ## 1. Current JSON Schemas
 Below are the JSON structures for the core entities based on the V1 (`catalog.py`, `observatory.py`, `product.py`). The fields causing performance issues due to embedding are highlighted.
@@ -75,6 +75,45 @@ The `Product` entity embeds its hierarchical levels directly. It lacks a direct 
 
 ```
 
+## 2. Map the current API use cases
+Analysis of the existing API endpoints and their interaction with the databse, hightlighting the performance of the current embedded model.
+
+### **Create a Catalog**
+* **Step-by-Step Analysis:**
+1. **Request Reception:** The API receives a full `Catalog` JSON object. THis object containd the `cid`, metadata, and the entire list of `items` embedded within it.
+
+2. **Validation:** The service calls `find_by:cid` to verify if the catalog ID already exists.
+
+3. **Single Massive Write:** If valid, the `catalog_service.create` method writes the entire object to the `catalogs` collection.
+
+4. **Implication:** When a catalog has 1,000 items, the database performs a single, heavy I/O write operation for one massive document. This triggers complex index updates for the parent document regarding slow writes due to increased size.
+
+
+### **Update a Catalog Item**
+
+
+* **Step-by-Step Analysis:**
+
+1. **No Direct Access:** There is no endpoint to update a single item directly by its ID because items do not exist as standalone documents.
+
+2. **Parent Retrieval:** To change one item's name, the system must first fetch the entire parent `Catalog` document into memory.
+
+3. **Full Document Rewrite:** After modifying the item in the array, the system must update the entire `Catalog` document in the database.
+
+4. **Implication:** Updating a single item requires rewriting and re-indexing a large catalog document, creating a significant write bottleneck.
+
+### Fetch an Observatory's Products
+
+
+* **Step-by-Step Analysis:**
+
+1. **Request:** The API receives an `obid` (Observatory ID) and filters.
+
+2. **Indirect Querying:** The Product entity lacks a direct `observatory_id` foreign key. Instead, it relies on an embedded `levels` array or a `level_path` string.
+
+3. **Scanning:** The database must scan these embedded arrays (levels) across the product collection to find matches that correspond to the observatory's configuration.
+
+4. **Implication:** This results in slow and complex queries because the engine must traverse embedded arrays rather than utilizing a simple, direct index lookup.
 
 
 ## 3. Pain Points & Proposed Solutions
