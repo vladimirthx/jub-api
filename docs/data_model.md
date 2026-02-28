@@ -124,6 +124,12 @@ Summary of critical issues identified in the current architecture and how the ne
 
 * **Problem:** Embedding items increases document size significantly, forcing the database to handle heavier I/O operations. This leads to frequent memory re-allocations and complex index updates.
 
+* **Proposed solution:**
+  * Apply Entity Separation by create a Many-to-Many  (link collection)
+  * Apply an Entity Separation by extract items from the embedded array into a new, independent primary collection called `CatalogItemLink` to connect `Catalog` and `CatalogItem`.
+  * Refactoring the API. Instead of writing one large document, it must create the `Catalog` document and separately create the associated links in `CatalogItemLink`.
+
+
 
 
 
@@ -131,6 +137,11 @@ Summary of critical issues identified in the current architecture and how the ne
 ### **2. Inefficient Links (Observatory Updates)**
 
 * **Problem:** When a Catalog contains thousands of items, the parent document becomes massively bloated. Any update to a single item requires rewriting and re-indexing the entire Catalog document, creating a write bottleneck.
+* **Proposed solution:**
+  * Remove embedded lists and manage the relationship using an `ObservatoryCatalogLink` collection (M:N); this link table will utilize a composite index of `(obid, cid)` to efficiently map to their Catalogs.
+  * Update GET operations so that retrieving an Observatory involves querying the `ObservatoryCatalogLink` collection to find its associated Catalogs, rather than loading embedded arrays.
+
+
 
 
 
@@ -138,4 +149,10 @@ Summary of critical issues identified in the current architecture and how the ne
 ### **3. Search Constraints (Product Querying)**
 
 * **Problem:** Embedding `Level` objects within the `Product` document complicates search. Finding products linked to a specific Catalog Item requires slow, complex queries that must traverse embedded arrays.
+* **Proposed solution:**
+  * Implement `ProductObservatoryLink` to directly link Products to Observatories and implement `ProductCatalogItemLink` to directly link Products to specific Catalog Items.
+  * Refactor the `create_products` endpoint to parse input levels and create the corresponding entries in `ProductCatalogItemLink`, removing the embedded `levels` array from the `Product` document.
+
+
+Some of this changes are going to be made by using a Data Migration Script. It will be developed to move existing data from `Catalog.items` into the decoupled `CatalogItems` collection, and also extract data from the embedded `Product.levels` fields and populate the new junction collections.
 
