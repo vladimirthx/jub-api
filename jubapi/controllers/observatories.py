@@ -27,7 +27,13 @@ def get_service()->ObservatoriesService:
 
 
 
-@router.post("/observatories")
+@router.post(
+        "/observatories",
+        summary="Create a new observatory",
+        description="Creates a new observatory record in the database. Validates if the Observatory ID (obid) already exists.",
+        response_model=dict,
+        status_code=201
+)
 async def create_observatory(
     observatory: ObservatoryDTO, 
     observatory_service:ObservatoriesService= Depends(get_service)
@@ -53,7 +59,13 @@ async def create_observatory(
     return { "obid": observatory.obid}
 
 
-@router.delete("/observatories/{obid}")
+@router.delete(
+        "/observatories/{obid}",
+        summary="Delete an observatory",
+        description="Permanently removes an observatory from the database using its unique Observatory ID (obid).",
+        response_model=None,
+        status_code=204
+)
 async def delete_observatory_by_obid(obid:str, observatory_service:ObservatoriesService = Depends(get_service)):
     exists = await observatory_service.find_by_obid(obid=obid)
     if exists.is_none:
@@ -63,7 +75,13 @@ async def delete_observatory_by_obid(obid:str, observatory_service:Observatories
         return Response(content=None, status_code=204)
 
 
-@router.post("/observatories/{obid}")
+@router.post(
+        "/observatories/{obid}",
+        summary="Update observatory catalogs",
+        description="Updates the list of catalogs associated with a specific observatory. Expects a list of LevelCatalogDTO objects.",
+        response_model=None,
+        status_code=204
+        )
 async def update_catalogs_by_obid(obid:str, catalogs:List[LevelCatalogDTO]=[], observatory_service:ObservatoriesRepository = Depends(get_service)):
     if len(catalogs)==0:
         return Response(status_code=204)
@@ -73,12 +91,24 @@ async def update_catalogs_by_obid(obid:str, catalogs:List[LevelCatalogDTO]=[], o
     return Response(status_code=204)
 
 
-@router.get("/observatories")
+@router.get(
+        "/observatories",
+        summary="Retrieve all active observatories",
+        description="Fetches a paginated list of all active (non-disabled) observatories. Supports pagination through \'skip\' and \'limit\' parameters.",
+        response_model=List[ObservatoryDTO],
+        status_code=200
+)
 async def get_observatories(skip:int = 0, limit:int = 10, observatory_service:ObservatoriesService = Depends(get_service)):
     documents = await observatory_service.find_all(query={"disabled":False},skip=skip,limit=limit)
     return documents
 
-@router.get("/observatories/{obid}")
+@router.get(
+        "/observatories/{obid}",
+        summary="Get observatory by OBID",
+        description="Retrieves a specific observatory's full data based on its unique Observatory ID (obid).",
+        response_model=ObservatoryDTO,
+        status_code=200
+        )
 async def get_observatory_by_key(obid:str, observatory_service:ObservatoriesService = Depends(get_service)):
     # observatory       = observatories_collection.find_one({"key":key})
     observatory = await observatory_service.find_by_obid(obid=obid)
