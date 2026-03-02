@@ -11,11 +11,36 @@ from jubapi.models import Catalog, CatalogItem
 
 
 class CatalogsRepository(object):
+    """
+    Repository for managing Catalog entities in the database.
+
+    Handles direct asynchronous interactions with the MongoDB collection,
+    performing CRUD operations and mapping raw BSON document to Pydantic DTOs.
+    """
 
     def __init__(self,collection:AsyncIOMotorCollection):
+        """
+        Initializes the CatalogRepository.
+
+        Args:
+            collection (AsyncIOMotorCollection): The MongoDB asynchronous collection instance for catalogs.
+        """
         self.collection = collection
 
     async def create(self,catalog:Catalog)->Result[str,Exception]:
+        """
+        Inserts a new catalog document into the database.
+
+        If the catalog lacks a 'cid' (Catalog ID), this method automatically generates a
+        unique alphanumeric nanoid for it before insertion.
+
+        Args:
+            catalog(Catalog): The internal model representation of the catalog to insert.
+
+        Returns:
+            Result[str, Exception]: An 'Ok' wrapping the inserted catalog object if successful.
+            
+        """
         try:
             if catalog.cid == "":
                catalog.cid = nanoid(alphabet=S.ascii_lowercase+S.digits)
