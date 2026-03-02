@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel,Field
+from pydantic import BaseModel,Field, ConfigDict
 from typing import List, Optional,Dict
 from bson import ObjectId
 from enum import Enum
@@ -38,7 +38,8 @@ class Observatory(BaseModel):
     catalogs:List[LevelCatalog]= Field(default=[],description="List mapping specific catalogs to hierarchical levels within this observatory.")
     disabled:bool = Field(default=False, description="Flag indicating if the observatory is currently hidden or disabled for external consumers.")
 
-    class Config:
+    model_config = ConfigDict(
+
         json_schema_extra = {
             "example": {
                 "obid": "<String>",
@@ -54,6 +55,7 @@ class Observatory(BaseModel):
                 "disabled": "<Boolean>"
             }
         }
+    )
 
 
 class CatalogItem(BaseModel):
@@ -63,7 +65,7 @@ class CatalogItem(BaseModel):
     description:str = Field(...,description="Detailed description of what this item represents.")
     metadata:Dict[str,str] = Field(..., description="Additional key-value metadata for the item.")
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "value": "<String>",
@@ -75,6 +77,7 @@ class CatalogItem(BaseModel):
                 }
             }
         }
+    )
 
 
 class CatalogKind(str, Enum):
@@ -88,7 +91,7 @@ class Catalog(BaseModel):
     items: List[CatalogItem] = Field(default = [], description="List of items contained within this catalog")
     kind:CatalogKind = Field(..., description="The categorization of the catalog (INTEREST, TEMPORAL, SPATIAL).")
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "cid": "<String>",
@@ -105,15 +108,16 @@ class Catalog(BaseModel):
                 ]
             }
         }
+    )
 
 
 class Level(BaseModel):
-    index:int = Field(..., "The depth index of this level within the product's hierarchy.")
+    index:int = Field(..., description="The depth index of this level within the product's hierarchy.")
     cid:str = Field(..., description="The Catalog ID that this level is associated with.")
     value:str = Field(..., description="The specific CatalogItem value selected for this level.")
     kind:str = Field(default="", description="The kind of catalog this level represents (INTEREST, TEMPORAL, SPATIAL).")
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "index": "<Integer>",
@@ -122,6 +126,7 @@ class Level(BaseModel):
                 "kind": "<String>"
             }
         }
+    )
 
 class Product(BaseModel):
     pid:str = Field(default="", description="Unique identifier for the product.")
@@ -134,7 +139,7 @@ class Product(BaseModel):
     tags:List[str]=Field(default=[], description="A list of searchable keyword tags associated with the product.")
     url:str = Field(default="", description="The direct URL or endpoint to access the product's source")
 
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "pid": "<String>",
@@ -157,3 +162,4 @@ class Product(BaseModel):
                 "url": "<String>"
             }
         }
+    )
