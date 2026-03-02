@@ -108,7 +108,7 @@ class Catalog(BaseModel):
 
 
 class Level(BaseModel):
-    index:int = Field(..., "The depth index of this level within the product's hierarchy.")
+    index:int = Field(..., description="The depth index of this level within the product's hierarchy.")
     cid:str = Field(..., description="The Catalog ID that this level is associated with.")
     value:str = Field(..., description="The specific CatalogItem value selected for this level.")
     kind:str = Field(default="", description="The kind of catalog this level represents (INTEREST, TEMPORAL, SPATIAL).")
