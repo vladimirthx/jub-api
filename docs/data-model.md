@@ -1,4 +1,4 @@
-# Current Data Model
+# Data Model
 
 ## 1. Current JSON Schemas
 Below are the JSON structures for the core entities based on the V1 (`catalog.py`, `observatory.py`, `product.py`). The fields causing performance issues due to embedding are highlighted.
