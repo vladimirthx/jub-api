@@ -31,6 +31,15 @@ class LevelCatalog(BaseModel):
 
 
 class Observatory(BaseModel):
+    """
+    Observatory model. This model is used to represent an observatory in the system.
+    
+    Attributes:
+        obid (str): 
+            The unique identifier of the observatory.
+        title (str): 
+            The title of the observatory.
+    """
     obid:str=""
     title: str="Observatory"
     image_url:str=""
