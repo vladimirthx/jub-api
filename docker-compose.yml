@@ -1,10 +1,12 @@
 services:
  jub-db:
-  image: mongo:6-jammy
+  image: mongo:8-noble
   ports:
     - ${JUB_MONGODB_HOST_PORT:-27027}:27017
   volumes:
     - jub-db:/data/db
+    - ./db/mongod.conf:/etc/mongo/mongod.conf
+  command: mongod --config /etc/mongo/mongod.conf
   networks:
     - jub
   restart: unless-stopped
