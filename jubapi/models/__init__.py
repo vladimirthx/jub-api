@@ -31,6 +31,7 @@ class LevelCatalog(BaseModel):
 
 
 class Observatory(BaseModel):
+<<<<<<< HEAD
     obid:str=Field(default="", description="Unique identifier for the observatory.")
     title: str= Field(default="Observatory", description="Display tittle or name of the observatory shown in the UI.")
     image_url:str= Field(default="", description="URL pointing to the representative image for the observatory.")
@@ -56,6 +57,23 @@ class Observatory(BaseModel):
             }
         }
     )
+=======
+    """
+    Observatory model. This model is used to represent an observatory in the system.
+    
+    Attributes:
+        obid (str): 
+            The unique identifier of the observatory.
+        title (str): 
+            The title of the observatory.
+    """
+    obid:str=""
+    title: str="Observatory"
+    image_url:str=""
+    description:str=""
+    catalogs:List[LevelCatalog]=[]
+    disabled:bool = False
+>>>>>>> task/document-current-data-model
 
 
 class CatalogItem(BaseModel):
