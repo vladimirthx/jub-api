@@ -40,10 +40,7 @@ async def create_observatory(
     result = await observatory_service.create(observatory=observatory)
     if result.is_err:
         error = result.unwrap_err()
-        raise HTTPException(
-            status_code=400,
-            detail="Observatory creation error: {}".format(error)
-        )
+        raise error.to_http_exception()
     log.info({
         "event":"CREATE.OBSERVATORY",
         "obid":observatory.obid,
@@ -56,8 +53,9 @@ async def create_observatory(
 @router.delete("/observatories/{obid}")
 async def delete_observatory_by_obid(obid:str, observatory_service:ObservatoriesService = Depends(get_service)):
     exists = await observatory_service.find_by_obid(obid=obid)
-    if exists.is_none:
-        raise HTTPException(detail="Observatory(obid={}) not found.".format(obid), status_code=404)
+    if exists.is_err:
+        error = exists.unwrap_err()
+        raise error.to_http_exception()
     else:
         response = await observatory_service.delete_by_obid(obid=obid)
         return Response(content=None, status_code=204)
@@ -69,7 +67,8 @@ async def update_catalogs_by_obid(obid:str, catalogs:List[LevelCatalogDTO]=[], o
         return Response(status_code=204)
     result = await observatory_service.update_catalogs(obid=obid,catalogs=catalogs)
     if result.is_err:
-        raise HTTPException(status_code=500, detail="Update failted: {}".format(obid))
+        error = result.unwrap_err()
+        raise error.to_http_exception()
     return Response(status_code=204)
 
 
@@ -83,5 +82,6 @@ async def get_observatory_by_key(obid:str, observatory_service:ObservatoriesServ
     # observatory       = observatories_collection.find_one({"key":key})
     observatory = await observatory_service.find_by_obid(obid=obid)
     if observatory.is_err:
-        return Response(content="Observatory(key={}) not found".format(obid), status_code=404)
+        error = observatory.unwrap_err()
+        raise error.to_http_exception()
     return observatory.unwrap()

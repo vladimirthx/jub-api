@@ -1,6 +1,6 @@
 
-from pydantic import BaseModel,Field
-from typing import List, Optional,Dict
+from pydantic import BaseModel,Field,StringConstraints,field_validator,AfterValidator
+from typing import List, Optional,Dict,Annotated
 from bson import ObjectId
 from enum import Enum
 
@@ -37,7 +37,8 @@ class Observatory(BaseModel):
     description:str=""
     catalogs:List[LevelCatalog]=[]
     disabled:bool = False
-
+# x= ""
+# x.strip()
 
 class CatalogItem(BaseModel):
     value:str
@@ -45,6 +46,10 @@ class CatalogItem(BaseModel):
     code:int
     description:str
     metadata:Dict[str,str]
+
+    # @field_validator('value', mode='before')
+
+
 
 
 class CatalogKind(str, Enum):
@@ -77,3 +82,10 @@ class Product(BaseModel):
     product_name: str=""
     tags:List[str]=[]
     url:str = ""
+
+
+# ____________________________________________
+
+# ___________________________________________
+
+# from datetime import datetime

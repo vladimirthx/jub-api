@@ -47,7 +47,8 @@ async def create_catalogs(
         log.error({
             "msg":str(error)
         })
-        raise HTTPException(status_code=500, detail="Catalog creation failed: {}".format(error))
+        raise error.to_http_exception()
+        # raise HTTPException(status_code=500, detail="Catalog creation failed: {}".format(error))
     log.info({
         "event":"CREATE.CATALOG",
         "exists":exists.is_ok,
@@ -63,7 +64,9 @@ async def create_catalogs(
 async def delete_catalogs(cid:str, catalog_service:CatalogsService= Depends(get_service)):
     exists = await catalog_service.find_by_cid(cid=cid)
     if  exists.is_err:
-        return Response(content="Catalog(key={}) not found.".format(cid), status_code=403)
+        error = exists.unwrap_err()
+        raise error.to_http_exception()
+        # return Response(content="Catalog(key={}) not found.".format(cid), status_code=403)
     else:
         response =await catalog_service.delete_by_cid(cid=cid)
         return Response(content=None, status_code=204)
@@ -73,13 +76,15 @@ async def get_catalogs(skip:int = 0, limit:int = 10, catalog_service:CatalogsSer
     result= await catalog_service.find_all(skip=skip,limit=limit)
     if result.is_ok:
         return result.unwrap_or([])
-    raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
+    error = result.unwrap_err()
+    raise error.to_http_exception()
 
 @router.get("/{cid}")
 async def get_catalogs_by_key(cid:str, catalog_service:CatalogsService= Depends(get_service)):
     catalog       =await catalog_service.find_by_cid(cid=cid)
     print(catalog)
     if catalog.is_err:
-        raise HTTPException(detail="Catalog(key={}) not found".format(cid), status_code=404)
+        error = catalog.unwrap_err()
+        raise error.to_http_exception()
     return catalog.unwrap()
 

@@ -6,7 +6,7 @@ from jubapi.dto.observatory import ObservatoryDTO,LevelCatalogDTO
 from jubapi.dto.product import ProductDTO
 from jubapi.dto import ProductFilter
 from jubapi.models import LevelCatalog, Observatory,Catalog,CatalogItem,Product,Level
-from jubapi.errors import OcaError,AlreadyExists,NotFound,UknownError
+from jubapi.errors import JubError,AlreadyExists,NotFound,UnknownError
 from  typing import List,Dict,Any
 from jubapi.dto.catalog import CatalogDTO
 from bson import ObjectId
@@ -20,7 +20,7 @@ class CatalogsService:
         repository:CatalogsRepository
     ):
         self.repository = repository
-    async def create(self, catalog:CatalogDTO)->Result[str, OcaError]:
+    async def create(self, catalog:CatalogDTO)->Result[str, JubError]:
         try:
             model = Catalog(
                 cid          = catalog.cid,
@@ -33,14 +33,14 @@ class CatalogsService:
             )
             if x.is_err:
                 return Err(
-                    UknownError(
+                    UnknownError(
                         detail=str(x.unwrap_err())
                     )
                 )
             return x
         except Exception as e:
             return Err(e)
-    async def find_by_cid(self,cid:str)->Result[CatalogDTO,OcaError]:
+    async def find_by_cid(self,cid:str)->Result[CatalogDTO,JubError]:
         try:
             x = await self.repository.find_by_cid(cid=cid)
             if x.is_none:
@@ -73,7 +73,7 @@ class ObservatoriesService:
         self.repository = repository
 
     
-    async def create(self,observatory:ObservatoryDTO)->Result[str,OcaError]:
+    async def create(self,observatory:ObservatoryDTO)->Result[str,JubError]:
         try:
             exists = await self.repository.find_by_obid(obid= observatory.obid)
             if exists.is_some:
@@ -92,7 +92,7 @@ class ObservatoriesService:
         except Exception as e:
             return Err(e)
     
-    async def update_catalogs(self, obid:str, catalogs: List[LevelCatalogDTO])->Result[str,OcaError]:
+    async def update_catalogs(self, obid:str, catalogs: List[LevelCatalogDTO])->Result[str,JubError]:
         try:
             xs = [ LevelCatalog(cid=i.cid, level=i.level) for i in catalogs]
             x = await self.repository.update_catalogs(
@@ -103,7 +103,7 @@ class ObservatoriesService:
         except Exception as e:
             return Err(e)
         
-    async def find_by_obid(self, obid:str)->Result[ObservatoryDTO,OcaError]:
+    async def find_by_obid(self, obid:str)->Result[ObservatoryDTO,JubError]:
         try:
             x = await self.repository.find_by_obid(obid=obid)
             if x.is_none:
@@ -138,7 +138,7 @@ class ProductsService:
         self.observatory_service = observatory_service
         self.catalog_service = catalog_service
     
-    async def create(self,product:ProductDTO)->Result[str, OcaError]:
+    async def create(self,product:ProductDTO)->Result[str, JubError]:
         """Create a new product in the system.
         Args:
             product (ProductDTO): 
@@ -168,52 +168,52 @@ class ProductsService:
             )
             x = await self.repository.create(product=model)
             if x.is_err:
-                return Err(UknownError(detail="Product creation failed"))
+                return Err(UnknownError(detail="Product creation failed"))
             return Ok(product.pid)
         except Exception as e:
             return Err(e)
-    async def create_many(self, products:List[ProductDTO]=[])->Result[List[str], OcaError]:
+    async def create_many(self, products:List[ProductDTO]=[])->Result[List[str], JubError]:
         try:
             xs = list(map(lambda x : Product(**x.model_dump()), products))
             res = await self.repository.creates(products=xs)
             if res.is_err:
-                return Err(UknownError(detail="Products creation failed."))
+                return Err(UnknownError(detail="Products creation failed."))
             return Ok(list(map(lambda x :x.pid, products)))
         except Exception as e:
             return Err(e)
-    async def find_by_pid(self, pid:str)->Result[ProductDTO, OcaError]:
+    async def find_by_pid(self, pid:str)->Result[ProductDTO, JubError]:
         try:
             xs = await self.repository.find_by_pid(pid=pid)
             if xs.is_none:
                 return Err(NotFound(detail="Product not found."))
             return Ok(xs.unwrap())
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
+            return Err(UnknownError(detail=str(e)))
     
-    async def find_all(self, query:Dict[str,Any]={}, skip:int =0, limit:int = 100)->Result[List[ProductDTO], OcaError]:
+    async def find_all(self, query:Dict[str,Any]={}, skip:int =0, limit:int = 100)->Result[List[ProductDTO], JubError]:
         try:
             xs = await self.repository.find_all(query=query, skip=skip,limit=limit)
             return Ok(xs)
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
-    async def find_all_by_ids(self, ids:List[ObjectId])->Result[List[ProductDTO],OcaError]:
+            return Err(UnknownError(detail=str(e)))
+    async def find_all_by_ids(self, ids:List[ObjectId])->Result[List[ProductDTO],JubError]:
         try:
             xs = await self.repository.find_all_by_ids(ids=ids)
             return Ok(xs)
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
-    async def filter_by_levels(self,tags:List[str],levels:List[str],skip:int=0, limit:int=100)->Result[List[ObjectId], OcaError]:
+            return Err(UnknownError(detail=str(e)))
+    async def filter_by_levels(self,tags:List[str],levels:List[str],skip:int=0, limit:int=100)->Result[List[ObjectId], JubError]:
         try:
             xs = await self.repository.filter_by_levels(tags=tags,levels=levels, skip=skip, limit=limit)
             return Ok(xs)
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
-    async def delete_by_pid(self, pid:str)->Result[str, OcaError]:
+            return Err(UnknownError(detail=str(e)))
+    async def delete_by_pid(self, pid:str)->Result[str, JubError]:
         try:
             x = await self.repository.delete_by_pid(pid=pid)
             return Ok(pid)
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
+            return Err(UnknownError(detail=str(e)))
     async def filter(
         self,
         obid:str,

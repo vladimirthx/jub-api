@@ -1,6 +1,7 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient,AsyncIOMotorCollection
 import jubapi.config as CX
+from jubapi.db.constants import CollectionNames
 
 
 client              = None

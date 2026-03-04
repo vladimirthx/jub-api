@@ -33,7 +33,7 @@ class Log(logging.Logger):
                  level:int = logging.DEBUG,
                  path:str = "./log",
                  disabled:bool = False,
-                 console_handler_filter =lambda record: record.levelno == logging.DEBUG,
+                 console_handler_filter =lambda record: record.levelno >= logging.DEBUG,
                  file_handler_filter =lambda record: record.levelno == logging.INFO,
                  console_handler_level:int = logging.DEBUG,
                  file_handler_level:int = logging.INFO,

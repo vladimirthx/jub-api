@@ -3,7 +3,7 @@ from jubapi.models.v2 import XVariableModel,ObservatoryModel,ProductModel,XVaria
 from jubapi.dto.v2 import ObservatoryDTO,XVariableDTO,ProductDTO,MultipleXVariableAssignmentDTO,ManyProductsMultipleXVariableAssignmentDTO,XVariableRawAssignmentDTO,SVResult,TVResult,IVResult,PTResult,XVariableInfoDTO,TemporalVariableInfo,ProductFoundDTO,XVariableMultipleInfoWithXVId,XVariableParentRelationshipDTO
 from option import Result,Ok,Err
 from nanoid import generate as nanoid
-from jubapi.errors import OcaError,UknownError,NotFound,AlreadyExists
+from jubapi.errors import JubError,UnknownError,NotFound,AlreadyExists
 from typing import List,Tuple,Dict,Any,Coroutine
 import hashlib as H
 import asyncio
@@ -138,7 +138,7 @@ class XVariableParentRelationshipService:
             return res
         except Exception as e:
             return Err(e)
-    async def create_many(self, dtos:List[XVariableParentRelationshipDTO])->Result[int, OcaError]:
+    async def create_many(self, dtos:List[XVariableParentRelationshipDTO])->Result[int, JubError]:
         try:
             async def __inner(dto):
                 exists = await self.repo.exists(parent_id=dto.parent_id , child_id= dto.child_id)
@@ -164,7 +164,7 @@ class ObservatoriesService:
         self.obid_aphabet = "0123456789abcdefghijklmnopqrst"
         self.obid_size = 10
 
-    async def create(self, observatory: ObservatoryDTO) -> Result[str, OcaError]:
+    async def create(self, observatory: ObservatoryDTO) -> Result[str, JubError]:
         try:
             y = observatory.model_dump()
             print("Y",y)
@@ -174,12 +174,12 @@ class ObservatoriesService:
                 
             x = await self.repo.create(obs_model)
             if x.is_err:
-                return Err(UknownError(detail="Observatory creation failed."))
+                return Err(UnknownError(detail="Observatory creation failed."))
             return Ok(obs_model.obid)
         except Exception as e:
             return Err(e)
 
-    async def find_by_obid(self, obid: str) -> Result[ObservatoryModel, OcaError]:
+    async def find_by_obid(self, obid: str) -> Result[ObservatoryModel, JubError]:
         try:
             x = self.repo.find_by_obisd(obid=obid)
         except Exception as e:
@@ -199,7 +199,7 @@ class XVariablesService:
         self.repo                = repo
         self.parent_relationship = parent_relationship
 
-    async def create_ordered(self,xs:List[XVariableDTO])->Result[List[str],OcaError]:
+    async def create_ordered(self,xs:List[XVariableDTO])->Result[List[str],JubError]:
         try:
             ordered:List[XVariableDTO] = sorted(xs,key=lambda k: k.order)
             xvids:List[str] = []    
@@ -213,7 +213,7 @@ class XVariablesService:
                 parents.append(x)
             return Ok([])
         except Exception as e:
-            return Err(UknownError(detail=str(e)))
+            return Err(UnknownError(detail=str(e)))
     
     def __calculate_xvid(xvar:XVariableDTO):
         hasher          = H.sha256()
@@ -254,7 +254,7 @@ class XVariablesService:
         # xvar.xvid = xvid
         return xvid
 
-    async def create(self, xvariable: XVariableDTO) -> Result[str, OcaError]:
+    async def create(self, xvariable: XVariableDTO) -> Result[str, JubError]:
         try:
             hasher          = H.sha256()
             if xvariable.xvid == "":
@@ -274,7 +274,7 @@ class XVariablesService:
             return Ok(model.xvid)
         except Exception as e:
             return Err(e)
-    async def create_many(self, xs:List[XVariableDTO])->Result[int, OcaError]:
+    async def create_many(self, xs:List[XVariableDTO])->Result[int, JubError]:
         try:
             async def __inner(model:XVariableDTO):
                 exists = await self.exists(xvid = model.xvid)
@@ -295,7 +295,7 @@ class XVariablesService:
         except Exception as e:
             return Err(e)
 
-    async def find_by_xvid(self, xvid:str)->Result[XVariableDTO, OcaError]:
+    async def find_by_xvid(self, xvid:str)->Result[XVariableDTO, JubError]:
         try:
             x = await self.repo.find_by_xvid(xvid=xvid)
             if x.is_err:
@@ -315,7 +315,7 @@ class XVariablesService:
     async def find_by_type_values(self,
         type:str, 
         values:List[str]=[]
-    )->Result[XVariableDTO,OcaError]:
+    )->Result[XVariableDTO,JubError]:
         try:
             xvids = []
             for value in values:
@@ -326,7 +326,7 @@ class XVariablesService:
                 xvids.append(xvid)
             res    = await self.repo.find_by_xvids(xvids)
             if res.is_err:
-                return Err(UknownError(detail=str(res.unwrap_err())))
+                return Err(UnknownError(detail=str(res.unwrap_err())))
             
             return Ok(res.unwrap())
         except Exception as e: 
@@ -359,7 +359,7 @@ class ProductsService:
         self.obid_size                       = 10
     
     
-    async def create(self, product:ProductCreationDTO)->Result[str, OcaError]:
+    async def create(self, product:ProductCreationDTO)->Result[str, JubError]:
         try:
             parsed = product.parse()
             sv = parsed.get("sv")
@@ -635,14 +635,14 @@ class ProductsService:
         except Exception as e:
             print("ERROR", e)
             return Err(e)
-    async def create_product(self, product:ProductModel)->Result[str,OcaError]:
+    async def create_product(self, product:ProductModel)->Result[str,JubError]:
         try:
             exists = await self.exists(pid = product.pid)
             if exists:
                 return Err(AlreadyExists(detail="Product already exists."))
             res = await self.repo.create(product=product)
             if res.is_err:
-                return Err(UknownError(str(res.unwrap_err())))
+                return Err(UnknownError(str(res.unwrap_err())))
             return res
         except Exception as e:
             return Err(e)
@@ -751,7 +751,7 @@ class XVariableAssignmentsService:
     def __init__(self, repo: XVariableAssignmentRepository):
         self.repo = repo
 
-    async def create(self, dto:XVariableAssignment)->Result[str,OcaError]:
+    async def create(self, dto:XVariableAssignment)->Result[str,JubError]:
         try:
             exists = await self.exists(xid=dto.xid, xvid= dto.xvid)
             
@@ -761,13 +761,13 @@ class XVariableAssignmentsService:
             result = await self.repo.create(x=dto)
 
             if result.is_err:
-                return Err(UknownError(result.unwrap_err()))
+                return Err(UnknownError(result.unwrap_err()))
 
             return result
         
         except Exception as e:
             return Err(e)
-    async def create_many(self, dtos:List[XVariableAssignment])->Result[int, OcaError]:
+    async def create_many(self, dtos:List[XVariableAssignment])->Result[int, JubError]:
         try:
             async def __inner(dto:XVariableAssignment):
                 exists = await self.repo.exists_by_xid_and_xvid(xid = dto.xid, xvid=dto.xvid)
@@ -778,7 +778,7 @@ class XVariableAssignmentsService:
                 return Ok(0)
             res = await self.repo.create_many(xs = filtered_dtos)
             if res.is_err:
-                return Err(UknownError(res.unwrap_err()))
+                return Err(UnknownError(res.unwrap_err()))
             n = len(res.unwrap())
             return Ok(n)
 
@@ -790,7 +790,7 @@ class XVariableAssignmentsService:
             return res
         except Exception as e:
             return Err(e)
-    async def assign(self,dto:MultipleXVariableAssignmentDTO)->Result[List[str],OcaError]:
+    async def assign(self,dto:MultipleXVariableAssignmentDTO)->Result[List[str],JubError]:
         try:
             xid = dto.xid
             xvids = []
@@ -802,7 +802,7 @@ class XVariableAssignmentsService:
                 xvids.append(XVariableAssignment(xid=xid, xvid=xvid))
             res = await self.repo.create_many(xs=xvids)
             if res.is_err:
-                return Err(UknownError(detail=str(res.unwrap_err())))
+                return Err(UnknownError(detail=str(res.unwrap_err())))
             return res
         except Exception as e:
             return Err(e)
