@@ -26,4 +26,4 @@ async def test_api_create_catalog():
     response = client.post("/catalogs", json=catalog.model_dump())
     
     print(response.json())
-    assert response.status_code == 200, "API request failed"
+    assert response.status_code == 201, "API request failed"
