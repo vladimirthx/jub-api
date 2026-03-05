@@ -1,4 +1,0 @@
-from jubapi.repositories.catalog import CatalogsRepository
-from jubapi.repositories.observatory import ObservatoriesRepository
-from jubapi.repositories.products import ProductsRepository
-from jubapi.repositories.rating import RatingsRepository

@@ -5,8 +5,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from jubapi.log.log import Log
 from jubapi.db import connect_to_mongo,close_mongo_connection
-from jubapi.controllers import observatories_router,catalogs_router,products_router,v3_router
-from jubapi.controllers.v2 import observatory_router_v2,xvariable_router,nameservice_router,product_router_v2
+from jubapi.controllers.v1 import observatories_router,catalogs_router,products_router
 import jubapi.config as CX
 
 log       = Log(
@@ -17,11 +16,13 @@ log       = Log(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Lifespan function for the FastAPI application. This function is used to connect to the MongoDB database when the application starts and to close the connection when the application stops.
+    """
     await connect_to_mongo()
     yield 
     await close_mongo_connection()
 
-    
 app = FastAPI(
     lifespan  = lifespan,
     root_path = CX.JUB_OPENAPI_PREFIX,
@@ -57,8 +58,3 @@ app.openapi = generate_openapi
 app.include_router(observatories_router,tags=["observatories"])
 app.include_router(catalogs_router,tags=["catalogs"])
 app.include_router(products_router,tags=["products"])
-app.include_router(observatory_router_v2,tags=["observatories_v2"])
-app.include_router(xvariable_router,tags=["xvariables"])
-app.include_router(nameservice_router,tags=["nameservices"])
-app.include_router(product_router_v2,tags=["products_v2"])
-app.include_router(v3_router,tags=["v3"])

@@ -19,13 +19,10 @@ services:
   env_file:
     - .env.dev
   ports:
-    - ${JUB_PORT:-5000}:${JUB_PORT:-5000}
+    - ${JUB_PORT:-6000}:${JUB_PORT:-6000}
   networks:
     - jub
-  command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-5000} --reload
-  # volumes:
-    # - "/log:/log"
-
+  command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-6000} --reload
 networks:
   jub:
     external: true

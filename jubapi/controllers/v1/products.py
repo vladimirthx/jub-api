@@ -41,7 +41,13 @@ def get_service()->ProductsService:
 
 
 # Products
-@router.get("/products")
+@router.get(
+        "/products",
+        summary="Retrieve all products",
+        description="Fetches a paginated list of all products available in the database.Use \'skip\' to offset results and \'limit\' to define the batch size.", 
+        response_model=List[ProductDTO],
+        status_code=200
+)
 async def get_products(skip:int =0, limit:int = 100, product_service: ProductsService = Depends(get_service))->List[ProductDTO]:
     """
     Retrieve a list of products with optional pagination.
@@ -55,7 +61,13 @@ async def get_products(skip:int =0, limit:int = 100, product_service: ProductsSe
         raise error.to_http_exception()
     return documents.unwrap()
 
-@router.get("/products/{pid}")
+@router.get(
+        "/products/{pid}",
+        summary="Get a product by its ID",
+        description="Retrieves a specific product's full data based on its unique Product ID (pid).",
+        response_model=ProductDTO,
+        status_code=200
+)
 async def get_product_by_pid(pid:str,product_service: ProductsService = Depends(get_service))->ProductDTO:
     documents = await product_service.find_by_pid(pid=pid)
     if documents.is_err:
@@ -65,7 +77,13 @@ async def get_product_by_pid(pid:str,product_service: ProductsService = Depends(
 
 
 
-@router.post("/observatories/{obid}/products/nid")
+@router.post(
+        "/observatories/{obid}/products/nid",
+        summary="Filter products for a specific observatory",
+        description="Retrieves a paginated list of products associated with a specific Observatory ID (obid). It applies complex filtering based on the provieded ProductFilter body.",
+        response_model=List[ProductDTO],
+        status_code=200
+)
 # @router.post("/f/products/{obid}")
 async def get_products_by_filter(
     obid:str,
@@ -84,7 +102,13 @@ async def get_products_by_filter(
     return xs
 
 
-@router.post("/products")
+@router.post(
+        "/products",
+        summary="Create multiple products",
+        description="Accepts a batch of ProductDTO objects and creates them in the database. Returns an empty 201 Created response upon succesful batch insertion.",
+        response_model=None,
+        status_code=201
+)
 async def create_products(products:List[ProductDTO], product_service: ProductsService = Depends(get_service)):
     start_time = T.time()
     res = await product_service.create_many(products=products)
@@ -100,7 +124,13 @@ async def create_products(products:List[ProductDTO], product_service: ProductsSe
 
 
 
-@router.delete("/products/{pid}")
+@router.delete(
+        "/products/{pid}",
+        summary="Delete a product.",
+        description="Permanently removes a product from the database using its unique Product ID (pid). Returns a 204 Content response on succesful deletion.",
+        response_model=None,
+        status_code=204
+)
 async def delete_product_by_pid(pid:str,product_service: ProductsService = Depends(get_service)):
     exists = await product_service.find_by_pid(pid=pid)
     if exists.is_err:

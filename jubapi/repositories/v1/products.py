@@ -4,8 +4,8 @@ from pymongo.results import DeleteResult
 from bson import ObjectId
 from option import Option, NONE, Some,Result,Ok,Err
 from typing import List,Any,Dict
-from jubapi.models import Product
-from jubapi.dto.product import ProductDTO
+from jubapi.models.v1 import Product
+from jubapi.dto.v1.product import ProductDTO
 # from jubapi.utils.utils import Utils as U
 
     

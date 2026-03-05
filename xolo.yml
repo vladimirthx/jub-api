@@ -33,7 +33,7 @@ services:
     - .env.dev
   # environment:
   ports:
-    - ${XOLO_PORT:-10001}:${XOLO_PORT:-10001}
+    - ${XOLO_PORT:-10000}:${XOLO_PORT:-10000}
   volumes:
     # - /log:/log
     # - /mictlanx/xolo:/mictlanx/xolo

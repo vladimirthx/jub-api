@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from uuid import uuid4
 from option import Option, NONE, Some
 from typing import Dict,Union,List
-from jubapi.dto.catalog import CatalogDTO,CatalogItemDTO
+from jubapi.dto.v1.catalog import CatalogDTO,CatalogItemDTO
 import json as J
 from bson.json_util import dumps
 

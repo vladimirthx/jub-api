@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+
 JUB_ENV_FILE_PATH = os.environ.get("JUB_ENV_FILE_PATH",".env")
 jub_env_exists = os.path.exists(JUB_ENV_FILE_PATH)
 print(f"Loading environment variables from: {JUB_ENV_FILE_PATH} - Exists: {jub_env_exists}")
@@ -17,7 +18,7 @@ JUB_OPENAPI_PREFIX        = os.environ.get("JUB_OPENAPI_PREFIX","")
 JUB_LOG_DEBUG             = bool(int(os.environ.get("JUB_LOG_DEBUG","1")))
 JUB_LOG_NAME              = os.environ.get("JUB_LOG_NAME","jubapi")
 JUB_LOG_PATH              = os.environ.get("JUB_LOG_PATH","/log")
-JUB_CORS_ORIGINS     = os.getenv("JUBAPI_CORS_ORIGINS","*").split(",")
-JUB_CORS_METHODS     = os.getenv("JUBAPI_CORS_METHODS","*").split(",")
-JUB_CORS_HEADERS     = os.getenv("JUBAPI_CORS_HEADERS","*").split(",")
-JUB_CORS_CREDENTIALS = os.getenv("JUBAPI_CORS_CREDENTIALS","True").lower() in ("true", "1")
+JUB_CORS_ORIGINS          = os.environ.get("JUBAPI_CORS_ORIGINS","*").split(",")
+JUB_CORS_METHODS          = os.environ.get("JUBAPI_CORS_METHODS","*").split(",")
+JUB_CORS_HEADERS          = os.environ.get("JUBAPI_CORS_HEADERS","*").split(",")
+JUB_CORS_CREDENTIALS      = os.environ.get("JUBAPI_CORS_CREDENTIALS","True").lower() in ("true", "1")

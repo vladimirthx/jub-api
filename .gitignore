@@ -11,4 +11,9 @@ db/keyfile
 .act-cache/
 log/
 .venv
+<<<<<<< HEAD
 run_actions.sh
+=======
+site/
+run_actions.sh
+>>>>>>> revert-12-task/document-current-data-model
