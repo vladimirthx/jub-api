@@ -4,8 +4,8 @@ from jubapi.querylang.v4.parser import QueryAST
 from motor.motor_asyncio import AsyncIOMotorClient as MongoClient
 import datetime as DT
 
-import jubapi.repositories.v4 as RV4
-import jubapi.models.v4 as MV4
+import jubapi.repositories.v2 as RV4
+import jubapi.models.v2 as MV4
 import jubapi.services.v4 as SV4
 from jubapi.db import CollectionNames
 from tests.deprecated.v3.test_services import catalog_service
