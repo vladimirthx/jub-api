@@ -1,10 +1,12 @@
 services:
  jub-db:
-  image: mongo:6-jammy
+  image: mongo:8-noble
   ports:
     - ${JUB_MONGODB_HOST_PORT:-27027}:27017
   volumes:
     - jub-db:/data/db
+    - ./db/mongod.conf:/etc/mongo/mongod.conf
+  command: mongod --config /etc/mongo/mongod.conf
   networks:
     - jub
   restart: unless-stopped
@@ -17,10 +19,10 @@ services:
   env_file:
     - .env.dev
   ports:
-    - ${JUB_PORT:-5000}:${JUB_PORT:-5000}
+    - ${JUB_PORT:-6000}:${JUB_PORT:-6000}
   networks:
     - jub
-  command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-5000} --reload
+  command: uvicorn jubapi.server:app --host ${JUB_HOST:-0.0.0.0} --port ${JUB_PORT:-6000} --reload
   # volumes:
     # - "/log:/log"
 

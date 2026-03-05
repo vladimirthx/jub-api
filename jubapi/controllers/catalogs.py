@@ -26,7 +26,13 @@ def get_service()->CatalogsService:
     return service
 
 
-@router.post("")
+@router.post(
+        "",
+        summary="Create a new catalog",
+        description="Creates a new catalog in the database. Validates if the given catalog ID (cid) already exists to prevent duplicates. Expects a fully formed CatalogDTO object.",
+        response_model=dict,
+        status_code=201
+)
 async def create_catalogs(
     catalog:CatalogDTO, 
     catalog_service:CatalogsService= Depends(get_service) 
@@ -59,7 +65,13 @@ async def create_catalogs(
     return { "cid": catalog.cid}
 
 
-@router.delete("/{cid}")
+@router.delete(
+        "/{cid}",
+        summary="Delete a catalog",
+        description="Deletes a catalog from the database using its unique Catalog ID (cid). Returns a 204 Content response on successful deletion.",
+        response_model=None,
+        status_code=204
+)
 async def delete_catalogs(cid:str, catalog_service:CatalogsService= Depends(get_service)):
     exists = await catalog_service.find_by_cid(cid=cid)
     if  exists.is_err:
@@ -68,14 +80,24 @@ async def delete_catalogs(cid:str, catalog_service:CatalogsService= Depends(get_
         response =await catalog_service.delete_by_cid(cid=cid)
         return Response(content=None, status_code=204)
 
-@router.get("")
+@router.get(
+        "",
+        summary="Retrieve all catalogs",
+        description="Fetches a paginated list of all catalogs. The pagination can be controled using the \'skip\' and \'limit\' query parameters.",
+        response_model=List[CatalogDTO],
+        status_code=200
+)
 async def get_catalogs(skip:int = 0, limit:int = 10, catalog_service:CatalogsService= Depends(get_service)):
     result= await catalog_service.find_all(skip=skip,limit=limit)
     if result.is_ok:
         return result.unwrap_or([])
     raise HTTPException(status_code=500, detail=str(result.unwrap_err()))
 
-@router.get("/{cid}")
+@router.get(
+        "/{cid}",
+        summary="Get catalog by CID",
+        description="Retrieves a specific catalog's full data absed on its unique Catalog ID (cid)."
+        )
 async def get_catalogs_by_key(cid:str, catalog_service:CatalogsService= Depends(get_service)):
     catalog       =await catalog_service.find_by_cid(cid=cid)
     print(catalog)

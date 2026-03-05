@@ -11,3 +11,5 @@ db/keyfile
 .act-cache/
 log/
 .venv
+site/
+run_actions.sh

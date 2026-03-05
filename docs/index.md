@@ -1,20 +1,21 @@
 
+# Home
+
 <div style="text-align: justify"> 
 
-QLX API is a RESTful API designed to support querying and management of data using the QLX model. This project provides a structured way to represent, organize, and query multi-dimensional data across attributes like spatial, temporal, categorical, and measurable variables. 
+Jub API is a RESTful API designed to support querying and management of data using the Jub data model. This project provides a structured way to represent, organize, and query multi-dimensional data across attributes like spatial, temporal, categorical, and measurable variables. 
 
 
 </div>
 
 <ul>
     <li><b>Products</b>: The main element of interest, represented by a set of attributes.</li>
-    <li><b>Xvariables</b>: Variables describing specific characteristics (e.g., location, time, categories).</li>
     <li><b>Catalogs</b>: A dynamic collection of Xvars, used for organizing and validating attributes across specific categories.</li>
     <li><b>Observatory</b>: Represents a space from which products and their characteristics are observed and queried.</li>
 </ul>
 <p style="text-align: justify"> 
-<!-- The QLX model is designed to manage and query products based on multiple attributes. This model is particularly useful for representing complex, multi-dimensional data, where each product has multiple characteristics that can be categorized across spatial, temporal, categorical, and measurable dimensions. The QLX model enables flexible querying, allowing users to filter products based on specific criteria across these dimensions. -->
-The QLX model as depicted in the diagram enables the creation of a dynamic and flexible UI by leveraging the relationships between observatories, catalogs, products, and Xvars. 
+<!-- The Jub model is designed to manage and query products based on multiple attributes. This model is particularly useful for representing complex, multi-dimensional data, where each product has multiple characteristics that can be categorized across spatial, temporal, categorical, and measurable dimensions. The Jub model enables flexible querying, allowing users to filter products based on specific criteria across these dimensions. -->
+The Jub model as depicted in the diagram enables the creation of a dynamic and flexible UI by leveraging the relationships between observatories, catalogs, products. 
 </p>
 
 <p align="center" id="image">
@@ -60,7 +61,7 @@ For instance:
 
 Because products are directly tied to combinations of values from the catalogs, the UI can easily update visualizations and data displays based on user selections in the catalogs. If a user filters by "State = SLP" and "Date = 2020," only products that match these criteria will be displayed.
 
-### XVariables
+<!-- ### XVariables
 
 The Xvars are the foundation of the entire QLX model, hence the name QLX. Everything in the model depends on Xvars:
 
@@ -70,5 +71,5 @@ The Xvars are the foundation of the entire QLX model, hence the name QLX. Everyt
 
 - **Observatories** are collections of products and catalogs, which themselves are defined by Xvars.
 
-Because Xvars are modular and can represent any attribute or dimension, they make the UI extremely flexible. Each Xvar is essentially a unit of data that can be displayed, filtered, or grouped in the UI. By combining and arranging Xvars within catalogs and observatories, the UI can dynamically adjust to new requirements without needing hard-coded structures.
+Because Xvars are modular and can represent any attribute or dimension, they make the UI extremely flexible. Each Xvar is essentially a unit of data that can be displayed, filtered, or grouped in the UI. By combining and arranging Xvars within catalogs and observatories, the UI can dynamically adjust to new requirements without needing hard-coded structures. -->
 
