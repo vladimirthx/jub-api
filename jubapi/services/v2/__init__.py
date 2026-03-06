@@ -409,7 +409,7 @@ class SearchService:
                 # If OR/SINGLE logic: All conditions pool together into ONE requirement set.
                 if query.group.logic in ["OR", "SINGLE"]:
                     # We combine all conditions into one big set. The product needs at least one tag from this combined set to satisfy the OR logic.
-                    combined_set = []
+                    combined_set = set([])
                     # skip_group is a flag to identify if we have a global wildcard in the group. If we do, we can skip processing the rest of the conditions because the wildcard already allows any tag to match.
                     skip_group = False
                     for cond in query.group.conditions:
