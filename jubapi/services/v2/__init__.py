@@ -408,30 +408,48 @@ class SearchService:
             for query in ast.queries:
                 # If OR/SINGLE logic: All conditions pool together into ONE requirement set.
                 if query.group.logic in ["OR", "SINGLE"]:
+                    # We combine all conditions into one big set. The product needs at least one tag from this combined set to satisfy the OR logic.
                     combined_set = []
+                    # skip_group is a flag to identify if we have a global wildcard in the group. If we do, we can skip processing the rest of the conditions because the wildcard already allows any tag to match.
                     skip_group = False
                     for cond in query.group.conditions:
                         if self.__is_global_wildcard(cond):
                             skip_group = True
                             break
+                        # If it's not a global wildcard, we resolve the condition as normal and add its valid tags to the combined set.
+                        res = await self._resolve_condition(cond)
+                        if res.is_err: 
+                            log.error(f"Failed to resolve condition {cond}: {res.unwrap_err()}")
+                            return res
+                        # combined_set.extend(res.unwrap())
+                        combined_set.update(res.unwrap()) # Using a set to avoid duplicates
+
+                    if not skip_group:
+                        required_sets.append(list(combined_set))
+                    
+                # If AND logic: Every condition becomes its OWN separate requirement set.
+                elif query.group.logic == "AND":
+                    intersected_sets = None
+
+                    for cond in query.group.conditions:
+                        
+                        if self.__is_global_wildcard(cond):
+                            continue  # Skip this condition, it doesn't restrict the search
 
                         res = await self._resolve_condition(cond)
                         if res.is_err: 
                             log.error(f"Failed to resolve condition {cond}: {res.unwrap_err()}")
                             return res
-                        combined_set.extend(res.unwrap())
-                    if not skip_group:
-                        required_sets.append(combined_set)
-                    
-                # If AND logic: Every condition becomes its OWN separate requirement set.
-                elif query.group.logic == "AND":
-                    for cond in query.group.conditions:
-                        if self.__is_global_wildcard(cond):
-                            continue  # Skip this condition, it doesn't restrict the search
-                        res = await self._resolve_condition(cond)
-                        if res.is_err: 
-                            return res
-                        required_sets.append(res.unwrap())
+                        conds_ids = set(res.unwrap())
+
+                        if intersected_sets is None:
+                            intersected_sets = conds_ids
+                        else:                            
+                            intersected_sets = intersected_sets.intersection(conds_ids)
+
+                    if intersected_sets is not None:
+                        required_sets.append(list(intersected_sets))
+
             # print("REQUIRED",required_sets)
             return Ok(required_sets)
         except Exception as e:
@@ -446,7 +464,6 @@ class SearchService:
         Translates a single AST condition into an exact list of catalog_item_ids.
         """
         try:
-            # Handle Temporal Math Operators (>, <, >=, <=)
             log.debug({
                 "event":"CONDITION_RESOLUTION",
                 "message": "Resolving condition",
