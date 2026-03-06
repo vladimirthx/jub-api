@@ -1,22 +1,5 @@
 from pymongo.collection import Collection
-from pymongo.results import DeleteResult
-from bson import ObjectId
 from pydantic import BaseModel
-from uuid import uuid4
-from option import Option, NONE, Some
-from typing import Dict,Union,List
-from jubapi.dto.v1.catalog import CatalogDTO,CatalogItemDTO
-import json as J
-from bson.json_util import dumps
-
-# class CatalogItem(BaseModel):
-#     name:str
-#     display_name:str
-#     code:str
-#     description:str
-#     metadata:Dict[str,str]
-
-
 class RatingDTO(object):
     def __init__(self, user_id:str,observatory_id:str, value:int):
         self.value = value
@@ -42,6 +25,3 @@ class RatingsRepository(object):
             result.append(rating)
         cursor.close()
         return result
-            # result[observatory["key"]] ={}
-            
-        # return

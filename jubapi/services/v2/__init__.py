@@ -1,809 +1,635 @@
-from jubapi.repositories.v1 import ObservatoriesRepository,XVariablesRepository,ProductRepository,XVariableAssignmentRepository,XVariableParentRelationshipRepository
-from jubapi.models.v1 import XVariableModel,ObservatoryModel,ProductModel,XVariableAssignment,ContentVars,PlotDescription,ContextualVars,XVariableType,XType,XVariableParentRelationshipModel
-from jubapi.dto.v2 import ObservatoryDTO,XVariableDTO,ProductDTO,MultipleXVariableAssignmentDTO,ManyProductsMultipleXVariableAssignmentDTO,XVariableRawAssignmentDTO,SVResult,TVResult,IVResult,PTResult,XVariableInfoDTO,TemporalVariableInfo,ProductFoundDTO,XVariableMultipleInfoWithXVId,XVariableParentRelationshipDTO
+from os import path
+from typing import List,Optional
+import jubapi.models.v2 as MV4
+import jubapi.repositories.v2 as RV4
+from jubapi.querylang.v2.parser  import QueryAST,Condition,ConditionOperators
+import jubapi.errors as EX
 from option import Result,Ok,Err
-from nanoid import generate as nanoid
-from jubapi.errors import JubError,UnknownError,NotFound,AlreadyExists
-from typing import List,Tuple,Dict,Any,Coroutine
-import hashlib as H
-import asyncio
-import json as J
-# from hashlib import _Hash
-from jubapi.querylang.peg import parse,parse_sv,parse_pt,parse_iv,parse_tv
-from jubapi.querylang.dto import ProductCreationDTO
+from jubapi.log.log import Log
+import os
+from jubapi.db import CollectionNames
+import datetime as DT
 
-class OcaNameService:
-    def __init__(self, 
-        xvariable_assignments_repo:XVariableAssignmentRepository,
-        product_repo: ProductRepository
+log = Log(
+    name = __name__,
+    path = os.environ.get("JUB_LOG_PATH", "/log"),
+)
+
+class ObservatoryService:
+    def __init__(
+        self, 
+        observatory_repository: RV4.ObservatoryRepository, 
+        observatory_product_link_repository: RV4.ObservatoryToProductLinkRepository,
+        product_repository: RV4.ProductRepository,
+        graph_link_manager: RV4.GraphLinkManager
     ):
-        self.xvariable_assignments_repo = xvariable_assignments_repo
-        self.product_repo = product_repo
+        self.observatory_repository = observatory_repository
+        self.observatory_product_link_repository = observatory_product_link_repository
+        self.product_repository = product_repository
+        self.graph_link_manager = graph_link_manager
 
-    async def filter(self, query:str,strict:bool = False):
-        try: 
-            # print("QUERY",query)
-            res = parse(query).asDict()
-            sv  = res.get("sv")
-            sv  = SVResult(**sv) if sv else None
-            tv  = res.get("tv") 
-            # print("TV",tv)
-            tv  = TVResult(**tv) if tv else None
-            iv  = res.get("iv")
-            iv  = IVResult(**iv) if iv else None
-            ov  = res.get("ov")
-            
-            pt  = res.get("pt")
-            pt  = PTResult(**pt) if pt else None
-            xxs = list(sv.calculate_hashes())
-            ys  = list(tv.calculate_hashes())
-            ws  = list(iv.calculate_hashes())
+    # --- Create Operations ---
 
-            sv_found_products:List[str] = []
-            for x in xxs:
-                _query = {"xvid":x.xvid}
-                result = await self.xvariable_assignments_repo.find(query=_query)
-                if result.is_err:
-                    continue
-                results = result.unwrap()
-                for y in results:
-                    if not y.xid in sv_found_products:
-                        sv_found_products.append(y.xid)
-
-            tv_found_products:List[str] = []
-            for y in ys:
-                for xvid in y.xvid:
-                    _query = {"xvid":xvid}
-                    result = await self.xvariable_assignments_repo.find(query=_query)
-                    if result.is_err:
-                        continue
-                    results = result.unwrap()
-                    for r in results:
-                        if not r.xid in tv_found_products:
-                            tv_found_products.append(r.xid)
-            
-            for w in ws:
-                print("W",w)
-            print("SV_FP", sv_found_products)
-            print("TV_FP",tv_found_products)
-
-            
-                # print("Y",y)
-
-            # for (i, p) in found_products:
-            # async def run_and_keep(cr: Coroutine[Any, Any, Result[ProductDTO, Exception]], x):
-            #     result = await cr
-            #     return result,x
-            # products = [ run_and_keep(self.product_repo.find_by_pid(pid= i), xvm) for (i,xvm) in found_products]
-            # products:List[Tuple[Result[ProductDTO,Exception],XVariableMultipleInfoWithXVId]] = await asyncio.gather(*products)
-            # products = list(map(lambda x: (x[0].unwrap(),x[1]),filter(lambda x: x[0].is_ok, products)))
-            # pfs = []
-            # for (p,xvm) in products:
-            #     pf = ProductFoundDTO(
-            #         pid = p.pid,
-            #         description=p.description,
-            #         name= p.name,
-            #         tags= list(xvm.to_tags()),
-            #     )
-            #     pfs.append(pf)
-            pfs = []
-            return pfs
-        except Exception as e:
-            print("ERROR",e)
-            # return Err(e)
-            # print("RESULTS",results)
-                
-            #     resp = result.unwrap()
-            #     if not resp.xid in found_products:
-            #         # print("PRODUCT",product)
-            #         temp_xid = resp.xid
-            #         # found_products.append(resp.xid)
-            #         matches+=1
-            #     else:
-            #         matches+=1
-            # print("MATCHES", matches)
-            # if matches == len(xs):
-            #     print("_"*20)
-            #     print("MATCHES", temp_xid)
-            #     print("xs",xs)
-            #     print("_"*20)
-            #     found_products.append(temp_xid)
-            # temp_xid= ""
-            # matches=0
-            
-                    # print()
-                    
-            
-            # print(resp.xid)
-            # print("RESULT", result)
-
-        # print("XS",xs)
-        # ys = list(tv.calculate_hashes())
-        # print("YS",ys)
-        # ws = list(iv.calculate_hashes())
-        # print("WS",ws)
-        # zs  = list(pt.calculate_hashes())
-        # print("ZS",zs)
-
-
-class XVariableParentRelationshipService:
-    def __init__(self,repo:XVariableParentRelationshipRepository):
-        self.repo = repo
-    async def create(self, dto:XVariableParentRelationshipDTO):
-        try:
-            exists = await self.repo.exists(parent_id= dto.parent_id, child_id=dto.child_id)
-            if exists:
-                return Err(AlreadyExists("XVariable parent relationship already exists"))
-            res = await self.repo.create(XVariableParentRelationshipModel(**dto.model_dump()))
-            return res
-        except Exception as e:
-            return Err(e)
-    async def create_many(self, dtos:List[XVariableParentRelationshipDTO])->Result[int, JubError]:
-        try:
-            async def __inner(dto):
-                exists = await self.repo.exists(parent_id=dto.parent_id , child_id= dto.child_id)
-                return exists, dto
-            existss_coroutines = [ __inner(dto) for dto in dtos]
-            existss = await asyncio.gather(*existss_coroutines)
-            # print("EXISTS",existss)
-            filtered_dtos = list(map(lambda x:x[1],filter(lambda x: not x[0], existss )))
-            # print("FILTRED_DTOS",filtered_dtos)
-            if len(filtered_dtos) ==0:
-                return Ok(0)
-            res = await self.repo.create_many([ XVariableParentRelationshipModel(**dto.model_dump()) for dto in filtered_dtos])
-            if res.is_err:
-                return res
-            return len(res.unwrap())
-        except Exception as e:
-            return Err(e)
-
-
-class ObservatoriesService:
-    def __init__(self, repo: ObservatoriesRepository):
-        self.repo = repo
-        self.obid_aphabet = "0123456789abcdefghijklmnopqrst"
-        self.obid_size = 10
-
-    async def create(self, observatory: ObservatoryDTO) -> Result[str, JubError]:
-        try:
-            y = observatory.model_dump()
-            print("Y",y)
-            obs_model = ObservatoryModel(**y)
-            if obs_model.obid == "":
-                obs_model.obid = f"obs-{nanoid(alphabet=self.obid_aphabet, size=self.obid_size)}"
-                
-            x = await self.repo.create(obs_model)
-            if x.is_err:
-                return Err(UnknownError(detail="Observatory creation failed."))
-            return Ok(obs_model.obid)
-        except Exception as e:
-            return Err(e)
-
-    async def find_by_obid(self, obid: str) -> Result[ObservatoryModel, JubError]:
-        try:
-            x = self.repo.find_by_obisd(obid=obid)
-        except Exception as e:
-            return Err(e)
-
-    async def update_observatory(self, obid: str, dto: ObservatoryDTO) -> bool:
-        return await self.repo.update(obid, dto.model_dump())
-
-    async def delete_observatory(self, obid: str) -> bool:
-        return await self.repo.delete(obid)
-
-class XVariablesService:
-    def __init__(self,
-        repo: XVariablesRepository,
-        parent_relationship:XVariableParentRelationshipService,
-    ):
-        self.repo                = repo
-        self.parent_relationship = parent_relationship
-
-    async def create_ordered(self,xs:List[XVariableDTO])->Result[List[str],JubError]:
-        try:
-            ordered:List[XVariableDTO] = sorted(xs,key=lambda k: k.order)
-            xvids:List[str] = []    
-            parents:List[XVariableDTO] =[]
-            for x in ordered:
-                res = await self.create(xvariable=x)
-                
-                for parent in parents:
-                    dto = XVariableParentRelationshipDTO(parent_id=parent.xvid, child_id=x.xvid)
-                    res = await self.parent_relationship.create(dto = dto)
-                parents.append(x)
-            return Ok([])
-        except Exception as e:
-            return Err(UnknownError(detail=str(e)))
-    
-    def __calculate_xvid(xvar:XVariableDTO):
-        hasher          = H.sha256()
-        if xvar.xtype == XType.String or xvar.xtype == XType.Float or xvar.xtype == XType.Integer or xvar.xtype == XType.X:
-            xbytes         = f"{xvar.type}{xvar.value}".encode("utf8")
-            hasher.update(xbytes)
-        elif xvar.xtype == XType.Array:
-            str_xs = list(map(lambda x: str(x).upper(), xvar.value))
-            xs = "".join(str_xs)
-            hasher.update(xs.encode("utf-8"))
-        elif xvar.xtype == XType.Date:
-            date_str = xvar.value.isoformat()
-            hasher.update(date_str.encode("utf-8"))
-        elif xvar.xtype == XType.DateRange:
-            start_date = xvar.value.start.isoformat()
-            end_date   = xvar.value.end.isoformat()
-            left_open  = xvar.value.left_open
-            right_open = xvar.value.right_open
-            left       = "(" if left_open else "["
-            right      = ")" if right_open else "]"
-            x = f"{left}{start_date}{end_date}{right}"
-            hasher.update(x.encode("utf-8"))
-        elif xvar.xtype == XType.IntegerRange or xvar.xtype == XType.Range:
-            start = xvar.value.start
-            end   = xvar.value.start
-            step  = xvar.value.step
-            x     = f"{start}{end}{step}"
-            hasher.update(x.encode("utf-8"))
-        elif xvar.xtype == XType.Object:
-            normalized_data = J.dumps(xvar.value,sort_keys=True)
-            data_bytes = normalized_data.encode("utf-8")
-            hasher.update(data_bytes)
-        # elif xvar.type == XType.Range:
-            # pass
-        # elif xvar.xtype == XType.Sequence:
-            # pass
-        xvid             = hasher.hexdigest()
-        # xvar.xvid = xvid
-        return xvid
-
-    async def create(self, xvariable: XVariableDTO) -> Result[str, JubError]:
-        try:
-            hasher          = H.sha256()
-            if xvariable.xvid == "":
-                xvariable.xvid = self.__calculate_xvid(xvariable)
-
-            
-            exists = await self.exists(xvid=xvariable.xvid)
-            if exists:
-                return Err(AlreadyExists(detail="XVariable already exists."))
-
-            
-            y     = xvariable.model_dump()
-            model = XVariableModel(**y)
-            x     = await self.repo.create(model)
-            if x.is_err:
-                return x
-            return Ok(model.xvid)
-        except Exception as e:
-            return Err(e)
-    async def create_many(self, xs:List[XVariableDTO])->Result[int, JubError]:
-        try:
-            async def __inner(model:XVariableDTO):
-                exists = await self.exists(xvid = model.xvid)
-                return exists,XVariableModel(**model.model_dump())
-            ys            = list(map(lambda x : __inner(x), xs ))
-            # print("_"*50)
-            # print("YS", ys)
-            # print("_"*50)
-            filtered_dtos = await asyncio.gather(*ys)
-            filtered_dtos = list(map(lambda y:y[1],filter(lambda x: not x[0], filtered_dtos)))
-            # print("_"*50)
-            # print("FITERESL", filtered_dtos)
-            # print("_"*50)
-            if len(filtered_dtos) == 0:
-                return Ok(0)
-            res           = await self.repo.create_many(xs = filtered_dtos)
-            return res
-        except Exception as e:
-            return Err(e)
-
-    async def find_by_xvid(self, xvid:str)->Result[XVariableDTO, JubError]:
-        try:
-            x = await self.repo.find_by_xvid(xvid=xvid)
-            if x.is_err:
-                return Err(NotFound(detail=str(x.unwrap_err())))
-            xx = x.unwrap()
-            return Ok(XVariableDTO.from_model(xx))
-        except Exception as e: 
-            return Err(e)
-
-    async def exists(self,xvid:str)->bool:
-        try:
-            res = await self.repo.exists(xvid = xvid)
-            return res
-        except Exception as e:
-            return False
-
-    async def find_by_type_values(self,
-        type:str, 
-        values:List[str]=[]
-    )->Result[XVariableDTO,JubError]:
-        try:
-            xvids = []
-            for value in values:
-                x      = f"{type}{value}"
-                hasher = H.sha256()
-                hasher.update(x.encode("utf-8"))
-                xvid   = hasher.hexdigest()
-                xvids.append(xvid)
-            res    = await self.repo.find_by_xvids(xvids)
-            if res.is_err:
-                return Err(UnknownError(detail=str(res.unwrap_err())))
-            
-            return Ok(res.unwrap())
-        except Exception as e: 
-            return Err(e)
-    # async def get_variables_by_parent(self, parent_id: str) -> Result[list[XVariableModel], OcaError]:
-    #     return self.repo.find_by_parent_id(parent_id)
-
-    # async def update_variable(self, obid: str, dto: XVariableDTO) -> bool:
-    #     return self.repo.update(obid, dto.dict())
-
-    # async def delete_variable(self, obid: str) -> bool:
-    #     return self.repo.delete(obid)
-    
-class ProductsService:
-    def __init__(self, 
-        repo: ProductRepository,
-        xvar_repo: XVariablesRepository,
-        xvar_service:XVariablesService,
-        xvar_assignments_repo:XVariableAssignmentRepository,
-        xvar_parent_relationship_service: XVariableParentRelationshipService
-        # (repo = xvar_parent_relationship_repo)
-    ):
-        self.repo                            = repo
-        self.xvar_assignments_repo           = xvar_assignments_repo
-        self.xvar_repo                       = xvar_repo
-        self.xvar_assignments_service        = XVariableAssignmentsService(repo = xvar_assignments_repo)
-        self.xvar_service                    = xvar_service
-        self.xvar_parent_relatioship_service = xvar_parent_relationship_service
-        self.obid_aphabet                    = "0123456789abcdefghijklmnopqrst"
-        self.obid_size                       = 10
-    
-    
-    async def create(self, product:ProductCreationDTO)->Result[str, JubError]:
-        try:
-            parsed = product.parse()
-            sv = parsed.get("sv")
-            tv = parsed.get("tv")
-            iv = parsed.get("iv")
-            pt = parsed.get("pt")
-            ov = parsed.get("ov")
-            info = parsed.get("info")
-            # print(parsed)
-            xvar_assignments:List[XVariableAssignment] = []
-
-            h_pid = H.sha256()
-            sv_elements = sv.get("elements",[])
-            sv_elements = sorted(sv_elements,key = lambda x: x["xvid"])
-            pid = ""
-            # print("SV_ELEMENTS",sv_elements)
-            for e in sv_elements:
-                _type = e.get("type")
-                if not _type :
-                    continue
-                elif _type =="SEQUENCE":
-                    items           = e.get("values")
-                    items = sorted(items, key=lambda k:k["xvid"])
-                    # print("ITEMS",items)
-                    xvariable_models = []
-                    parent_child_relationship:List[Dict[str, str]] = []
-                    xvid=e.get("xvid")
-                    for i,v in enumerate(items) :
-                        __type  = v.get("type")
-                        __value = v.get("value")
-                        __xvid  = v.get("xvid")
-                        xvariable_model = XVariableDTO(
-                            **v,
-                            variable_type=XVariableType.Spatial,
-                            raw= f"{__type}({__value})"
-                        )
-                        xvar_assignments.append(
-                            XVariableAssignment(xid=pid, xvid = __xvid)
-                        )
-                        # print("SV__XIVD_i",__xvid)
-                        h_pid.update(xvariable_model.xvid.encode())
-                        if i >0:
-                            parent_child_relationship.append(
-                                XVariableParentRelationshipDTO(**{"parent_id": items[i-1].get("xvid"),"child_id": __xvid })
-                            )
-                        xvariable_models.append(xvariable_model)
-                    
-
-                    create_parent_relationships_result = await self.xvar_parent_relatioship_service.create_many(parent_child_relationship)
-                    if create_parent_relationships_result.is_err:
-                        return create_parent_relationships_result
-
-                    xvariable_model_seq  = XVariableDTO(
-                        **e, 
-                        xtype         = XType.Sequence,
-                        value         = e.get("values"),
-                        variable_type = XVariableType.Spatial,
-                        raw           = product.ctx_vars.spatial_var,
-                    )
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = xvid ))
-                    # print("SV__XIVD",xvid)
-                    h_pid.update(xvid.encode())
-                    xvariable_models.append(xvariable_model_seq)
-                    result = await self.xvar_service.create_many(xvariable_models)
-                else:
-                    __type          = e.get("type")
-                    __value         = e.get("value")
-                    __xvid          = e.get("xvid")
-                    # print("SV__XVID",__xvid)
-                    h_pid.update(__xvid.encode())
-                    xvariable_model = XVariableDTO(
-                        **e,
-                        variable_type=XVariableType.Spatial,
-                        raw= f"{__type}({__value})"
-                    )
-                    # print("__XVID",__xvid)
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = __xvid))
-                    result = await self.xvar_service.create(xvariable_model)
-            
-            # print("XVAR_ASSIGNMENTS", xvar_assignments)
-
-            # print("*"*40)
-            tv_elements = tv.get("elements",[])
-            # print("TV_ELEMENTS",tv_elements)
-            tv_elements = sorted(tv_elements, key = lambda k: k["xvid"])
-            for e in tv_elements:
-                __type          = e.get("type")
-                __value         = e.get("value")
-                __xvid          = e.get("xvid")
-                if __type == "DATE":
-                    xvar = XVariableDTO(
-                        **e,
-                        variable_type= XVariableType.Temporal,
-                        raw= f"{__type}({__value.month},{__value.day},{__value.year})"
-                    )
-                    # print("TV_XVAR_XVID_1",xvar.xvid)
-                    h_pid.update(xvar.xvid.encode())
-                    result = await self.xvar_service.create(xvar)
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = __xvid))
-
-                elif __type == "DATE_RANGE":
-                    left_open  = e.get("left_open",False)
-                    right_open = e.get("right_open",False)
-                    left  = "(" if left_open else "["
-                    right = ")" if right_open else "]"
-                    start = e.get("start")
-                    end   = e.get("end")
-                    xvar = XVariableDTO(
-                        xvid=__xvid,
-                        type=__type,
-                        value={
-                            "start":start,
-                            "end":end,
-                            "left_open":left_open,
-                            "right_open":right_open
-                        },
-                        xtype=XType.DateRange,
-                        variable_type= XVariableType.Temporal,
-                        raw=f"{left}Date({start.month}, {start.day}, {start.year}), Date({end.month}, {end.day}, {end.year}){right}"
-                    )
-                    # print("TV_XVAR_XVID",xvar.xvid)
-                    h_pid.update(xvar.xvid.encode())
-                    result = await self.xvar_service.create(xvar)
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = __xvid))
-                # print(e)
-
-            # print("*"*40)
-            iv_elements   = iv.get("elements")
-            iv_elements = sorted(iv_elements, key = lambda k: k["xvid"])
-            # print("IV_ELEMENTS",iv_elements)
-            raws = []
-            for e in iv_elements:
-                __type = e.get("type")
-                items = e.get("values")
-                items = sorted(items, key = lambda k:k["xvid"])
-                xvid   = e.get("xvid")
-                xvars = []
-                # __VALUES
-                items_values = []
-                for v in items:
-                    _type = v.get("type")
-                    _value = v.get("value")
-                    _xvid = v.get("xvid")
-                    raw = f"{_type}({_value})"
-                    items_values.append(_value)
-                    xvar = XVariableDTO(
-                        **v,
-                        variable_type=XVariableType.Interest,
-                        raw=raw
-                    )
-                    # print("IV_XVAR_XVID",xvar.xvid)
-                    h_pid.update(xvar.xvid.encode())
-                    # print("_XVID",_xvid)
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = _xvid))
-                    raws.append(raw)
-                    xvars.append(xvar)
-                raws = sorted(raws, key = lambda k: k)
-                if len(items) >1:
-                    xvar_ = XVariableDTO(
-                        xvid=xvid,
-                        raw=",".join(raws),
-                        type=__type,
-                        value=items_values,
-                        variable_type=XVariableType.Interest,
-                        xtype=XType.Array
-                    )
-                    xvars.append(xvar_)
-                    # print("*"*50)
-                    # print("IV_XVAR_XVID>1",xvid)
-                    # print("xVAR>1",xvar_)
-                    # print("*"*50)
-                    h_pid.update(xvid.encode())
-                    xvar_assignments.append(XVariableAssignment(xid = pid, xvid = xvid))
-                res = await self.xvar_service.create_many(xs = xvars)
-            
-            # print("*"*40)
-            pt_elements   = pt.get("elements")
-            pt_elements = sorted(pt_elements, key = lambda k: k["xvid"])
-            # print("PT_ELEMENTS",pt_elements)
-            for e in pt_elements:
-                val  = e.get("value")
-                xvid = e.get("xvid")
-                xvar = XVariableDTO(
-                    xvid          = xvid,
-                    type          = e.get("type"),
-                    raw           = f"{val}",
-                    value         = val,
-                    xtype         = XType.String,
-                    variable_type = XVariableType.ProductType
-                )
-                h_pid.update(xvar.xvid.encode())
-                await self.xvar_service.create(xvariable=xvar)
-                xvar_assignments.append(XVariableAssignment(xid=pid, xvid = xvid))
-            
-            
-            # print("*"*40)
-            ov_elements   = ov.get("elements")
-            ov_elements = sorted(ov_elements, key = lambda k: k["xvid"])
-            # print("OV_ELEMENTS", ov_elements)
-            for e in ov_elements:
-                # print("e",e)
-                value = e.get("value")
-                event = value.get("event")
-                method = value.get("method")
-                scale = value.get("scale")
-                xvid = e.get("xvid")
-                xvar = XVariableDTO(**e, raw=f"{event}.{method}({scale})",variable_type=XVariableType.Observable)
-                h_pid.update(xvar.xvid.encode())
-                res = await self.xvar_service.create(xvariable=xvar)
-                xvar_assignments.append(XVariableAssignment(xid = pid, xvid=xvid ))
-            info_elements = info.get("elements")
-            info_elements = sorted(info_elements, key = lambda k: k["xvid"])
-            # event = info_elements.get("")
-            # print("INFO",info)
-            for e in info_elements:
-                # print(e)
-                event  = e.get('event')
-                method = e.get("method")
-                scale  = e.get("scale")
-                stat   = e.get("stat")
-                value  = e.get("value")
-                xvid = e.get("xvid")
-                xvar = XVariableDTO(
-                    xvid=xvid,
-                    type=f"{event}_{method}{'_'+scale if scale !=''else ''}",
-                    xtype=XType.Object,
-                    variable_type=XVariableType.Info,
-                    value={
-                        "event":event,
-                        "method":method,
-                        "scale":scale,
-                        "stat":stat,
-                        "value":value,
-                    },
-                    raw=f"{event}.{method}({scale}).[{','.join(raws)}].{stat}({value})"
-                )
-                h_pid.update(xvar.xvid.encode())
-                h = H.sha256()
-                h.update(stat.encode())
-                xvid_stat = h.hexdigest()
-                xvar_stat = XVariableDTO(
-                    type=stat,
-                    value=value,
-                    variable_type=XVariableType.Info,
-                    xvid=xvid_stat,
-                    xtype=XType.String,
-                    
-                )
-                res = await self.xvar_service.create_many([xvar, xvar_stat])
-                xvar_assignments.append(XVariableAssignment(xid = pid, xvid =xvid ))
-                xvar_assignments.append(XVariableAssignment(xid = pid, xvid =xvid_stat ))
-            pid = h_pid.hexdigest()
-            # print("PID",pid)
-            for xass in xvar_assignments:
-                xass.xid = pid
-            res = await self.xvar_assignments_service.create_many(dtos = xvar_assignments)
-            # print("RESUILT",res)
-            res = await self.create_product(
-                product= ProductModel(
-                    pid            = pid,
-                    content_vars   = ContentVars(**product.content_vars.model_dump()),
-                    ctx_vars       = ContextualVars(**product.ctx_vars.model_dump()),
-                    data_source_id = product.data_source_id,
-                    data_view_id   = product.data_view_id,
-                    description    = product.description,
-                    disabled       = False,
-                    name           = product.name,
-                    plot_desc      = PlotDescription(**product.plot_desc.model_dump())
-                )
-            )
-            print("PRODUCT_RESULT",res)
-            # xvar_assignments = map(lambda x:x, xvar_assignments)
-        except Exception as e:
-            print("ERROR", e)
-            return Err(e)
-    async def create_product(self, product:ProductModel)->Result[str,JubError]:
-        try:
-            exists = await self.exists(pid = product.pid)
-            if exists:
-                return Err(AlreadyExists(detail="Product already exists."))
-            res = await self.repo.create(product=product)
-            if res.is_err:
-                return Err(UnknownError(str(res.unwrap_err())))
-            return res
-        except Exception as e:
-            return Err(e)
-    async def exists(self, pid:str)->bool:
-        try:
-            res = await self.repo.exists_by_pid(pid= pid)
-            return res
-        except Exception as e:
-            return Err(e)
-    # async def __createx(self, product: ProductCreationDTO) -> Result[str, OcaError]:
-    #     try:
-    #         sv_result = SVResult(**parse_sv(f"SV={product.ctx_vars.spatial_var}").asDict().get("sv"))
-    #         tv_result = TVResult(**parse_tv(f"TV={product.ctx_vars.temporal_var}").asDict().get("tv"))
-    #         iv_result = IVResult(**parse_iv(f"IV={product.content_vars.interest_var}").asDict().get("iv"))
-    #         pt_result = PTResult(**parse_pt(f"ProductType={product.ctx_vars.product_type}").asDict().get("pt"))
-            
-    #         pid = ""
-    #         h_pid = H.sha256()
-    #         sv_assignments,sv_xvar_models, h_pid = ProductsService.__sv_assignments(h_pid=h_pid, elements=sv_result.elements)
-    #         # print(sv_xvar_models)
-    #         # _____________________________A
-    #         # TV ASSIGMENTS
-    #         tv_assigments,tv_xvar_models,h_pid = ProductsService.__tv_assignments(h_pid=h_pid, elements=tv_result.elements)
-    #         # print(tv_xvar_models)
-    #         #  IV ASSIGMENTS
-    #         iv_assigments,iv_xvar_models,h_pid = ProductsService.__iv_assignments(h_pid=h_pid, elements=iv_result.elements)
-    #         # print("IV_MODELS",iv_xvar_models)
-    #         pt_assignments,pt_xvar_models,h_pid = ProductsService.__pt_assignments(h_pid=h_pid, elements=pt_result.elements)
-    #         # print("PT_MODELS",pt_xvar_models)
-    #         # print("PT_ASSIGMENTS", pt_assignments)
-    #         pid = h_pid.hexdigest()
-            
-    #         assignments = sv_assignments + tv_assigments + iv_assigments + pt_assignments
-    #         assignments_with_error:List[XVariableAssignment]  = []
-    #         xvar_models = sv_xvar_models + tv_xvar_models + iv_xvar_models + pt_xvar_models
-
-    #         xvar_with_error:List[XVariableModel] = []
-    #         for xvar_model in  xvar_models:
-    #             exists = await self.xvar_repo.exists_by_xvid(xvid=xvar_model.xvid)
-    #             if exists:
-    #                 continue
-    #             res = await self.xvar_repo.create(variable=xvar_model)
-    #             if res.is_err:
-    #                 xvar_with_error.append(xvar_model)
-            
-    #         if len(xvar_models) == len(xvar_with_error):
-    #             xvar_with_error = []
-
-    #         for x in assignments:
-    #             x.xid = pid
-    #             exists = await self.xvar_assignments_repo.exists_by_xid_and_xvid(xid=x.xid, xvid=x.xvid)
-    #             if not exists:
-    #                 res = await self.xvar_assignments_repo.create(x)
-    #                 if res.is_err:
-    #                     print(x,res, "Failed to save")
-    #                     assignments_with_error.append(x)
-    #         if len(assignments_with_error) == len(assignments):
-    #             assignments_with_error = []
-            
-    #         product_model = ProductModel(
-    #             pid            = pid,
-    #             name           = product.name,
-    #             description    = product.description,
-    #             data_source_id = product.data_source_id,
-    #             data_view_id   = product.data_view_id,
-    #             content_vars   = ContentVars(**product.content_vars.model_dump()),
-    #             ctx_vars       = ContextualVariables(**product.ctx_vars.model_dump()),
-    #             plot_desc      = PlotDescription(**product.plot_desc.model_dump()),
-    #             disabled       = False,
-    #         )
-    #         product_exists = await self.repo.exists_by_pid(pid=pid)
-    #         if not product_exists:
-    #             result = await self.repo.create(product=product_model)
-    #             if result.is_err:
-    #                 return Err(UknownError(detail=str(result.unwrap_err())))
-    #         return Ok(pid)
-    #     except Exception as e:
-    #         return Err(e)
-    # async def create(self, product: ProductCreationDTO) -> Result[str, OcaError]:
-    #     try:
-    #         if product.pid  == "":
-    #             product.pid = nanoid(alphabet=self.obid_aphabet, size=self.obid_size)
-    #         exists = await self.repo.find_by_pid(pid= product.pid)
-    #         if exists.is_ok:
-    #             return Err(AlreadyExists("Product already exists."))
-    #         product_model = ProductModel(
-    #             pid            = ,
-    #             name           = product.name,
-    #             description    = product.description,
-    #             data_source_id = product.data_source_id,
-    #             data_view_id   = product.data_view_id,
-    #             content_vars   = ContentVars(**product.content_vars),
-    #             ctx_vars       = ContextualVariables(**product.ctx_vars),
-    #             plot_desc      = PlotDescription(**product.plot_desc),
-    #             disabled       = False,
-    #         )
-    #         # model = ProductModel(**product.model_dump())
-    #         x = await self.repo.create(model)
-    #         return Ok(product.pid)
-    #     except Exception as e:
-    #         return Err(e)
-    
-
-
-class XVariableAssignmentsService:
-    def __init__(self, repo: XVariableAssignmentRepository):
-        self.repo = repo
-
-    async def create(self, dto:XVariableAssignment)->Result[str,JubError]:
-        try:
-            exists = await self.exists(xid=dto.xid, xvid= dto.xvid)
-            
-            if exists:
-                return Err(AlreadyExists(detail="XVariable assignement exists."))
-
-            result = await self.repo.create(x=dto)
-
-            if result.is_err:
-                return Err(UnknownError(result.unwrap_err()))
-
-            return result
+    async def create_observatory(self, observatory: MV4.ObservatoryX) -> Result[str, EX.JubError]:
+        exists_result = await self.observatory_repository.get_by_id(observatory.observatory_id)
+        if exists_result.is_ok:
+            return Err(EX.JubError(f"Observatory with ID {observatory.observatory_id} already exists"))
         
-        except Exception as e:
-            return Err(e)
-    async def create_many(self, dtos:List[XVariableAssignment])->Result[int, JubError]:
+        return await self.observatory_repository.insert(observatory)
+
+    async def add_catalog(self, observatory_id: str, catalog_id: str,level:int = 0) -> Result[bool, EX.JubError]:
+        """Assigns an existing catalog to this observatory (e.g., SPATIAL or CIE10)."""
+        result = await self.graph_link_manager.link_observatory_to_catalog(observatory_id, catalog_id,level)
+        if result.is_err:
+            log.error(f"Failed to link catalog {catalog_id} to observatory {observatory_id}: {result.unwrap_err()}")
+            return Err(EX.JubError(f"Failed to link catalog {catalog_id} to observatory {observatory_id}: {result.unwrap_err()}"))
+        return Ok(True)
+    # --- Read Operations (Aggregation) ---
+
+    async def get_observatory(self, observatory_id: str) -> Result[MV4.ObservatoryX, EX.JubError]:
+        return await self.observatory_repository.get_by_id(observatory_id)
+
+    async def get_all_products_in_observatory(self, observatory_id: str) -> Result[List[MV4.ProductX], EX.JubError]:
+        """
+        Dynamically builds a $lookup pipeline to fetch all products for this domain.
+        """
+        pipeline = [
+            {"$match": {"observatory_id": observatory_id}},
+            {"$lookup": {
+                "from": self.product_repository.collection.name, # Dynamic collection name
+                "localField": "product_id",
+                "foreignField": "product_id",
+                "as": "product_data"
+            }},
+            {"$unwind": "$product_data"},
+            {"$replaceRoot": {"newRoot": "$product_data"}}
+        ]
+        
+        cursor = self.observatory_product_link_repository.collection.aggregate(pipeline)
         try:
-            async def __inner(dto:XVariableAssignment):
-                exists = await self.repo.exists_by_xid_and_xvid(xid = dto.xid, xvid=dto.xvid)
-                return exists, dto
-            xs            = await asyncio.gather(*list(map(lambda x:__inner(x), dtos)))
-            filtered_dtos = list(map(lambda x: x[1] , filter(lambda x: not x[0], xs) ))
-            if len(filtered_dtos) == 0:
-                return Ok(0)
-            res = await self.repo.create_many(xs = filtered_dtos)
+            return Ok([MV4.ProductX(**doc) for doc in cursor])
+        except Exception as e:
+            log.error(f"Error fetching products in observatory: {e}")
+            return Err(EX.UnknownError(str(e)))
+
+    async def get_catalogs_by_observatory_id(self, observatory_id: str) -> Result[List[MV4.CatalogX], EX.JubError]:
+        """
+        Dynamically builds a $lookup pipeline to fetch all catalogs assigned to this domain.
+        Executes asynchronously using motor.
+        """
+        try:
+            print("BEFORE_PIPELINE")
+            pipeline = [
+                # 1. Find all link documents for this specific observatory
+                {"$match": {"observatory_id": observatory_id}},
+                
+                # 2. Join the actual catalog documents
+                {"$lookup": {
+                    "from": CollectionNames.CATALOGS.value, # Dynamic collection name
+                    "localField": "catalog_id",
+                    "foreignField": "catalog_id",
+                    "as": "catalog_data"
+                }},
+                
+                # 3. Flatten the array created by $lookup
+                {"$unwind": "$catalog_data"},
+                
+                # 4. Replace the root link document with the actual catalog metadata
+                {"$replaceRoot": {"newRoot": "$catalog_data"}}
+            ]
+            
+            # Execute against the linking collection
+            cursor = self.graph_link_manager.observatory_catalog_link_repository.collection.aggregate(pipeline)
+            documents = await cursor.to_list(length=None)
+            
+            # Parse into Pydantic models
+            catalogs = [MV4.CatalogX(**doc) for doc in documents]
+            return Ok(catalogs)
+            
+        except Exception as e:
+            log.error({
+                "message": "Error fetching catalogs for observatory",
+                "error": str(e),
+                "observatory_id": observatory_id
+            })
+            return Err(EX.JubError.from_exception(e)) 
+    
+
+
+    # --- Delete Operations ---
+
+    async def delete_observatory(self, observatory_id: str) -> Result[bool, EX.JubError]:
+        """Deletes the observatory (products remain in the database, just unassigned to this view)."""
+        success = await self.observatory_repository.delete(observatory_id)
+        return success
+
+class CatalogService:
+    def __init__(
+        self, 
+        catalog_repository: RV4.CatalogRepository, 
+        catalog_items_repository: RV4.CatalogItemRepository,
+        catalog_item_alias_repository: RV4.CatalogItemAliasRepository, # The alias/value repo
+        link_manager: RV4.GraphLinkManager
+    ):
+        self.catalog_repository            = catalog_repository
+        self.catalog_item_repository       = catalog_items_repository
+        self.catalog_item_alias_repository = catalog_item_alias_repository
+        self.link_manager                  = link_manager
+
+    # --- Create Operations ---
+
+    async def create_catalog(self, catalog: MV4.CatalogX) -> Result[str,EX.JubError]:
+        exists_result = await self.catalog_repository.get_by_id(catalog.catalog_id)
+        if exists_result.is_ok:
+            return Err(EX.AlreadyExists(f"Catalog with ID {catalog.catalog_id} already exists"))
+        return await self.catalog_repository.insert(catalog)
+
+    async def add_item_to_catalog(self, catalog_id: str, item: MV4.CatalogItemX, parent_id: Optional[str] = None) -> Result[str,EX.JubError]:
+        """Saves a new item, links it to its catalog, and builds the hierarchy if requested."""
+        insert_rest = await self.catalog_item_repository.insert(item)
+
+        if insert_rest.is_err:
+            log.error({
+                "message": "Failed to insert catalog item",
+                "error": insert_rest.unwrap_err(),
+                "catalog_id": catalog_id,
+            })
+            return Err(EX.JubError(f"Failed to insert catalog item: {insert_rest.unwrap_err()}"))
+        
+        item_id = insert_rest.unwrap()
+        
+        # Link to the main catalog (e.g., SPATIAL)
+        result = await self.link_manager.link_catalog_to_item(catalog_id, item_id)
+        if result.is_err:
+            # Rollback item insertion if linking fails
+            delete_catalog_item_result = await self.catalog_item_repository.delete(item_id)
+
+            if delete_catalog_item_result.is_err:
+                log.error(f"Failed to rollback catalog item after link failure: {delete_catalog_item_result.unwrap_err()}")
+                return Err(EX.JubError(f"Failed to rollback catalog item after link failure: {delete_catalog_item_result.unwrap_err()}"))
+
+            return Err(EX.JubError(f"Failed to link item to catalog: {result.unwrap_err()}"))
+        
+        # Link to parent if it exists (e.g., TAM -> VIC)
+        if parent_id:
+            await self.link_manager.set_item_relationship(parent_id, item_id)
+            
+        return Ok(item_id)
+
+    async def add_value_to_item(self, catalog_item_id: str, value: MV4.CatalogItemAlias) -> Result[str,EX.JubError]:
+        """Saves an alias (e.g., '1' or 'CDVALLES') and links it to the canonical item."""
+        try: 
+            val_id_result = await self.catalog_item_alias_repository.insert(value)
+            if val_id_result.is_err:
+                log.error(f"Failed to insert catalog item alias: {val_id_result.unwrap_err()}")
+                return Err(EX.JubError(f"Failed to insert catalog item alias: {val_id_result.unwrap_err()}"))
+            
+            val_id = val_id_result.unwrap()
+            
+            res = await self.link_manager.link_item_to_alias(catalog_item_id, val_id)
             if res.is_err:
-                return Err(UnknownError(res.unwrap_err()))
-            n = len(res.unwrap())
-            return Ok(n)
+                # Rollback alias insertion if linking fails
+                delete_alias_result = await self.catalog_item_alias_repository.delete(val_id)
+
+                if delete_alias_result.is_err:
+                    log.error(f"Failed to rollback catalog item alias after link failure: {delete_alias_result.unwrap_err()}")
+                    return Err(EX.JubError(f"Failed to rollback catalog item alias after link failure: {delete_alias_result.unwrap_err()}"))
+
+                return Err(EX.JubError(f"Failed to link alias to catalog item: {res.unwrap_err()}"))
+            return Ok(val_id)
+        except Exception as e:
+            log.error(f"Error adding value to item: {e}")
+            return Err(EX.JubError.from_exception(e))
+    
+    async def get_catalog_hierarchy_levels(self, root_catalog_id: str) -> Result[List[MV4.CatalogX], EX.JubError]:
+        """
+        Gets the structural hierarchy for a SPECIFIC catalog family.
+        Example: Pass "cat_cie10", get [Capítulo, Bloque, Categoría] in exact order.
+        Example: Pass "cat_spatial_mx", get [País, Estado, Municipio] in exact order.
+        """
+        try:
+            # We instantly grab the whole family and sort by level (0, 1, 2, 3...)
+            cursor = self.catalog_repository.collection.find(
+                {"root_catalog_id": root_catalog_id}
+            ).sort("level", 1)
+            
+            docs = await cursor.to_list(length=None)
+            return Ok([MV4.CatalogX(**doc) for doc in docs])
+            
+        except Exception as e:
+            return Err(EX.JubError.from_exception(e))
+
+    async def get_items_by_parent(self, parent_item_id: str) -> Result[List[MV4.CatalogItemX], EX.JubError]:
+        """
+        Gets the specific sub-level items.
+        Example: Pass "MX" (Mexico), get all States linked to it.
+        """
+        try:
+            # 1. Find all children edges in the relationship collection
+            rel_cursor = self.link_manager.catalog_item_relationship_repository.collection.find({"parent_id": parent_item_id})
+            rel_docs = await rel_cursor.to_list(length=None)
+            
+            if not rel_docs:
+                return Ok([])
+                
+            child_ids = [doc["child_id"] for doc in rel_docs]
+            
+            # 2. Fetch the actual CatalogItem metadata for those children
+            item_cursor = self.catalog_item_repository.collection.find({"catalog_item_id": {"$in": child_ids}})
+            item_docs = await item_cursor.to_list(length=None)
+            
+            items = [MV4.CatalogItemX(**doc) for doc in item_docs]
+            items.sort(key=lambda x: x.name) # Alphabetical for the UI
+            
+            return Ok(items)
+        except Exception as e:
+            return Err(EX.JubError.from_exception(e))
+    # --- Delete Operations (Cascading) ---
+
+    async def delete_catalog_item(self, catalog_item_id: str) -> Result[bool, EX.JubError]:
+        """Deletes an item and securely wipes its tags, aliases, and hierarchy edges."""
+        success = await self.catalog_item_repository.delete(catalog_item_id)
+        if success:
+            await self.link_manager.remove_all_catalog_item_links(catalog_item_id)
+        return success
+
+    async def delete_catalog(self, catalog_id: str) -> Result[bool, EX.JubError]:
+        """Deletes a catalog and its direct links."""
+        success = await self.catalog_repository.delete(catalog_id)
+        if success:
+            await self.link_manager.remove_all_catalog_links(catalog_id)
+        return success
+
+
+    
+class ProductService:
+    def __init__(
+        self, 
+        product_repository: RV4.ProductRepository, 
+        link_manager: RV4.GraphLinkManager
+    ):
+        self.product_repository = product_repository
+        self.link_manager = link_manager
+
+    async def insert_product(
+        self, 
+        product: MV4.ProductX, 
+        observatory_id: str, 
+        catalog_item_ids: List[str] = None
+    ) -> Result[str, EX.JubError]:
+        """Inserts a dataset, assigns it to an observatory, and applies all its tags."""
+        
+        # 1. Save the product
+        prod_res = await self.product_repository.insert(product)
+        if prod_res.is_err:
+            return prod_res
+
+        # 2. Assign to the observatory
+        obs_link_res = await self.link_manager.link_observatory_to_product(observatory_id, product.product_id)
+        if obs_link_res.is_err:
+            return obs_link_res
+
+        # 3. Apply the tags
+        if catalog_item_ids:
+            for item_id in catalog_item_ids:
+                tag_res = await self.link_manager.link_product_to_catalog_item(product.product_id, item_id)
+                if tag_res.is_err:
+                    log.warning(f"Failed to tag product {product.product_id} with {item_id}: {tag_res.err()}")
+                    # Depending on your strictness, you could return an Err here, 
+                    # but usually, you want to keep going even if one tag fails.
+
+        return Ok(product.product_id)
+
+    async def delete_product(self, product_id: str) -> Result[bool, EX.JubError]:
+        """Deletes the product and securely wipes its observatory assignment and tags."""
+        del_res = await self.product_repository.delete(product_id)
+        if del_res.is_err:
+            return del_res
+            
+        wipe_res = await self.link_manager.remove_all_product_links(product_id)
+        if wipe_res.is_err:
+            return wipe_res
+            
+        return Ok(True)
+
+
+class SearchService:
+    def __init__(
+        self, 
+        observatory_product_link_repository:RV4.ObservatoryToProductLinkRepository,
+        product_catalog_item_link_repository: RV4.ProductToCatalogItemLinkRepository,
+        catalog_item_relationship_repository: RV4.CatalogItemRelationshipRepository,
+        catalog_item_repository: RV4.CatalogItemRepository,
+        product_repository: RV4.ProductRepository,
+        catalog_alias_repository: RV4.CatalogItemAliasRepository,
+        catalog_item_catalog_alias_link_repository: RV4.CatalogItemToCatalogAliasLinkRepository
+    ):
+        self.observatory_product_link_repository  = observatory_product_link_repository
+        self.product_catalog_item_link_repository = product_catalog_item_link_repository
+        self.catalog_item_relationship_repository = catalog_item_relationship_repository
+        self.catalog_item_repository              = catalog_item_repository
+        self.product_repository                   = product_repository
+        self.catalog_alias_repository             = catalog_alias_repository
+        self.catalog_item_catalog_alias_link_repository = catalog_item_catalog_alias_link_repository
+        
+    async def _get_canonical_id(self, raw_target: str) -> Result[str, EX.JubError]:
+            """
+            Intercepts a raw string from the AST. 
+            If it's an alias (e.g., '28'), it returns the real ID (e.g., 'TAM').
+            If it's not an alias, it assumes it's already the real ID.
+            """
+            try:
+                # 1. Search the alias table for this exact string
+                alias_cursor = self.catalog_alias_repository.collection.find({"value": raw_target})
+                alias_docs = await alias_cursor.to_list(length=1)
+                
+                if alias_docs:
+                    alias_id = alias_docs[0]["catalog_item_alias_id"]
+                    
+                    # 2. Find which canonical item this alias points to
+                    link_cursor = self.catalog_item_catalog_alias_link_repository.collection.find({"catalog_item_alias_id": alias_id})
+                    link_docs = await link_cursor.to_list(length=1)
+                    
+                    if link_docs:
+                        return Ok(link_docs[0]["catalog_item_id"])
+                        
+                # 3. If it's not in the alias table, we assume the user typed the canonical ID directly
+                return Ok(raw_target)
+                
+            except Exception as e:
+                log.error(f"Error resolving alias for {raw_target}: {e}")
+                return Err(EX.JubError.from_exception(e))       
+    def __is_global_wildcard(self, condition: Condition) -> bool:
+            """Checks if the user just passed '*' with no prefix (e.g., VS(*))."""
+            path = condition.item_path
+            # Check for strings "*", "", or lists ["*"], []
+            if isinstance(path, list):
+                return len(path) == 0 or (len(path) == 1 and path[0] == "*")
+            return path == "*" or path == ""
+    async def execute_query(self, query_str: str, observatory_id: Optional[str] = None) -> Result[List[MV4.ProductX], EX.JubError]:
+        """
+        The main entry point for the Jub search bar.
+        """
+        try:
+            # 1. Parse string to AST
+            ast = QueryAST.parse(query_str)
+            print("AST",ast)
+            # 2. Resolve AST conditions into required sets of Catalog Item IDs
+            required_sets_res = await self._build_required_sets(ast)
+            print(required_sets_res)
+
+            print("_"*20)
+            if required_sets_res.is_err:
+                return required_sets_res
+            
+            required_sets = required_sets_res.unwrap()
+            
+            # 3. Build and execute the aggregation pipeline
+            pipeline = self._build_mongo_pipeline(observatory_id, required_sets)
+            
+            cursor = self.observatory_product_link_repository.collection.aggregate(pipeline)
+            documents = await cursor.to_list(length=None)
+            
+            # 4. Return formatted products
+            products = [MV4.ProductX(**doc) for doc in documents]
+            return Ok(products)
+            
+        except Exception as e:
+            log.error(f"Execution failed for query '{query_str}': {e}")
+            return Err(EX.JubError.from_exception(e))
+
+    async def _build_required_sets(self, ast: QueryAST) -> Result[List[List[str]], EX.JubError]:
+        """
+        Converts the AST into a list of required tag lists.
+        A product MUST have at least one matching tag from EVERY list in required_sets.
+        """
+        try: 
+            required_sets: List[List[str]] = []
+            for query in ast.queries:
+                # If OR/SINGLE logic: All conditions pool together into ONE requirement set.
+                if query.group.logic in ["OR", "SINGLE"]:
+                    combined_set = []
+                    skip_group = False
+                    for cond in query.group.conditions:
+                        if self.__is_global_wildcard(cond):
+                            skip_group = True
+                            break
+
+                        res = await self._resolve_condition(cond)
+                        if res.is_err: 
+                            log.error(f"Failed to resolve condition {cond}: {res.unwrap_err()}")
+                            return res
+                        combined_set.extend(res.unwrap())
+                    if not skip_group:
+                        required_sets.append(combined_set)
+                    
+                # If AND logic: Every condition becomes its OWN separate requirement set.
+                elif query.group.logic == "AND":
+                    for cond in query.group.conditions:
+                        if self.__is_global_wildcard(cond):
+                            continue  # Skip this condition, it doesn't restrict the search
+                        res = await self._resolve_condition(cond)
+                        if res.is_err: 
+                            return res
+                        required_sets.append(res.unwrap())
+            # print("REQUIRED",required_sets)
+            return Ok(required_sets)
+        except Exception as e:
+            log.error({
+                "message": "Error building required sets from AST",
+                "error": str(e),
+            })
+            return Err(EX.JubError.from_exception(e))
+
+    async def _resolve_condition(self, condition: Condition) -> Result[List[str], EX.JubError]:
+        """
+        Translates a single AST condition into an exact list of catalog_item_ids.
+        """
+        try:
+            # Handle Temporal Math Operators (>, <, >=, <=)
+            log.debug({
+                "event":"CONDITION_RESOLUTION",
+                "message": "Resolving condition",
+                "condition": condition.model_dump()
+            })
+            if condition.catalog_value == "TEMPORAL" and condition.operator not in ["WILDCARD"]:
+                mongo_op_map = {
+                    ">": "$gt", ">=": "$gte", "<": "$lt", "<=": "$lte", "=": "$eq",
+                    "EXACT": "$eq" 
+                }
+                mongo_op     = mongo_op_map.get(condition.operator)
+                if not mongo_op:
+                    return Err(EX.UnknownError(f"Unsupported operator for temporal condition: {condition.operator}"))
+
+                path_val = condition.item_path[-1] if isinstance(condition.item_path, list) and len(condition.item_path) > 0 else condition.item_path
+                
+                try:
+                    dt_val = DT.datetime.fromisoformat(path_val.replace("Z", "+00:00"))  # Convert ISO string to datetime object
+                except ValueError as ve:
+                    log.error(f"Invalid datetime format for temporal condition: {path_val}")
+                    return Err(EX.JubError(f"Invalid datetime format for temporal condition: {path_val}"))
+
+
+                # Query the catalog items to find which IDs fall in this date range
+                cursor = self.catalog_item_repository.collection.find(
+                    # Assuming temporal values are stored as ISO strings in 'value'
+                    {"value_type": "DATETIME", "temporal_value": {mongo_op: dt_val}}
+                )
+                docs = await cursor.to_list(length=None)
+                log.debug({
+                    "event": "TEMPORAL_CONDITION_RESOLUTION",
+                    "message": "Resolved temporal condition",
+                    "path_val": path_val,
+                    "mongo_op": mongo_op,
+                    "dt_val": dt_val.isoformat(),
+                    "condition": condition.model_dump(),
+                    "resolved_ids": [doc["catalog_item_id"] for doc in docs]
+                })
+                return Ok([doc["catalog_item_id"] for doc in docs])
+
+
+            path       = condition.item_path
+            is_list    = isinstance(path, list)
+            raw_target = ""
+            # Extract target ID from the path (e.g., "CIE10.C50" -> "C50")
+            # target_id = condition.item_path[-1] if isinstance(condition.item_path, list) else condition.item_path
+
+
+            # Handle EXACT
+            log.debug({
+                "event": "CONDITION_RESOLUTION",
+                "message": "Handling exact condition",
+                "operator": condition.operator,
+                "item_path": condition.item_path
+            })
+            if condition.operator == "WILDCARD":
+                path_len = len(path)
+                if is_list:
+                    # Scenario A: The parser left the '*' in the list (e.g., ['MX', 'TAMPS', '*'])
+                    if path_len > 1 and path[-1] == "*":
+                        raw_target = path[-2]
+                    # Scenario B: The parser stripped the '*' (e.g., ['MX', 'TAMPS'])
+                    elif path_len > 0 and path[-1] != "*":
+                        raw_target = path[-1]
+                    # Scenario C: Reverse wildcard (e.g., ['*', 'MX'])
+                    elif path_len > 0 and path[0] == "*":
+                        raw_target = path[-1]
+                    else:
+                        return Err(EX.JubError(f"Invalid wildcard list format: {path}"))
+                else:
+                    # Handle raw strings
+                    if path.endswith(".*"):
+                        raw_target = path[:-2]
+                    elif path != "*":
+                        raw_target = path  # The parser just sent "TAMPS" with a WILDCARD operator
+                    else:
+                        raw_target = path # Global wildcard handling
+
+                # return Err(EX.JubError(f"Invalid wildcard format in condition: {condition}"))
+            elif condition.operator == "EXACT":
+                raw_target = path[-1] if is_list else path
+            else:
+                return Err(EX.UnknownError(f"Unsupported operator in condition: {condition.operator}"))
+
+
+
+            # Alias resolution: If the user typed an alias (e.g., '28'), we need to find the canonical ID (e.g., 'TAM') 
+            canonical_res = await self._get_canonical_id(raw_target)
+            
+            if canonical_res.is_err:
+                log.error(f"Failed to resolve canonical ID for {raw_target}: {canonical_res.unwrap_err()}")
+                return Err(EX.JubError(f"Failed to resolve canonical ID for {raw_target}: {canonical_res.unwrap_err()}"))
+            target_id = canonical_res.unwrap()
+
+            if condition.operator == ConditionOperators.WILDCARD.value:
+                children_res = await self.catalog_item_relationship_repository.get_all_children_nodes(target_id)
+                if children_res.is_err:
+                    log.error(f"Failed to fetch children for wildcard condition {condition}: {children_res.unwrap_err()}")
+                    return Err(EX.JubError(f"Failed to fetch children for wildcard condition {condition}: {children_res.unwrap_err()}"))
+                valid_ids = [target_id] + children_res.unwrap()  # Include the parent ID itself
+                return Ok(valid_ids)
+            
+            elif condition.operator == ConditionOperators.EXACT.value:
+                return Ok([target_id])
+            
+            else:
+                log.error(f"Unsupported operator in condition: {condition.operator}")
+                return Err(EX.UnknownError(f"Unsupported operator in condition: {condition.operator}"))
+           
 
         except Exception as e:
-            return Err(e)
-    async def exists(self, xid:str, xvid:str)->bool:
-        try:
-            res = await self.repo.exists_by_xid_and_xvid(xid=xid, xvid=xvid)
-            return res
-        except Exception as e:
-            return Err(e)
-    async def assign(self,dto:MultipleXVariableAssignmentDTO)->Result[List[str],JubError]:
-        try:
-            xid = dto.xid
-            xvids = []
-            for assignment in dto.assignments:
-                h = H.sha256()
-                x = f"{assignment.kind}{assignment.value}"
-                h.update(x.encode("utf-8"))
-                xvid = h.hexdigest()
-                xvids.append(XVariableAssignment(xid=xid, xvid=xvid))
-            res = await self.repo.create_many(xs=xvids)
-            if res.is_err:
-                return Err(UnknownError(detail=str(res.unwrap_err())))
-            return res
-        except Exception as e:
-            return Err(e)
+            log.error(f"Error resolving condition {condition}: {e}")
+            return Err(EX.JubError.from_exception(e))
 
+    def _build_mongo_pipeline(self, observatory_id: Optional[str], required_sets: List[List[str]]) -> List[dict]:
+        """
+        Translates the required_sets into a high-performance MongoDB intersection pipeline.
+        If observatory_id is None, it searches across all observatories.
+        """
+        pipeline = []
+
+        # 1. Scope the search strictly to this observatory (IF provided)
+        if observatory_id:
+            pipeline.append({"$match": {"observatory_id": observatory_id}})
+            
+        # 1.5. DEDUPLICATION: If searching all observatories, a product might appear multiple times 
+        # if it belongs to multiple observatories. We group by product_id to ensure unique results.
+        pipeline.append({
+            "$group": {
+                "_id": "$product_id",
+                "product_id": {"$first": "$product_id"}
+            }
+        })
+
+        # 2. Join the product's tags from the linking table
+        pipeline.append({
+            "$lookup": {
+                "from": self.product_catalog_item_link_repository.collection.name,
+                "localField": "product_id",
+                "foreignField": "product_id",
+                "as": "raw_tags"
+            }
+        })
+
+        # 3. Transform the array of link objects into a simple array of strings (IDs)
+        pipeline.append({
+            "$project": {
+                "product_id": 1,
+                "matched_tags": {
+                    "$map": {
+                        "input": "$raw_tags",
+                        "as": "tag_doc",
+                        "in": "$$tag_doc.catalog_item_id"
+                    }
+                }
+            }
+        })
+
+        # 4. Apply the logical intersections parsed from the AST (ONLY if there are requirements)
+        if required_sets:
+            intersection_conditions = [
+                {"$gt": [{"$size": {"$setIntersection": ["$matched_tags", req_set]}}, 0]}
+                for req_set in required_sets
+            ]
+            
+            pipeline.append({
+                "$match": {
+                    "$expr": {
+                        "$and": intersection_conditions
+                    }
+                }
+            })
+
+        # 5. Fetch the actual product metadata for the surviving IDs
+        pipeline.extend([
+            {"$lookup": {
+                "from": self.product_repository.collection.name,
+                "localField": "product_id",
+                "foreignField": "product_id",
+                "as": "product_data"
+            }},
+            {"$unwind": "$product_data"},
+            {"$replaceRoot": {"newRoot": "$product_data"}}
+        ])
+
+        return pipeline

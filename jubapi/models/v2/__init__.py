@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field,StringConstraints,AfterValidator
-from typing import List, Optional, Dict, Annotated
+from typing import Optional, Dict, Annotated
 from enum import Enum
 import re
 
@@ -10,7 +10,8 @@ import datetime as DT
 def to_upper_snake(v: str) -> str:
     v = re.sub(r'([a-z])([A-Z])', r'\1_\2', v)
     v = re.sub(r'[^A-Za-z0-9]+', '_', v)
-    return v.upper().strip('_')
+    r = v.upper().strip('_')
+    return r
 
 UpperSnakeStr =Annotated[str, 
     StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
@@ -70,7 +71,7 @@ class CatalogType(str, Enum):
 
 class CatalogX(Descriptable):
     catalog_id: str
-    root_group_id: str
+    root_group_id: Optional[str ] = Field(default=None)
     name: str
     value: UpperSnakeStr 
     catalog_type: CatalogType

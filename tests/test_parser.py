@@ -1,10 +1,6 @@
 import pytest
-from pydantic import ValidationError
-
-# Assuming the models are saved in a file named `models.py`
 from jubapi.models.v2 import CatalogX, CatalogType
-# Assuming the parser is saved in a file named `parser.py`
-from jubapi.querylang.v4.parser import QueryAST
+from jubapi.querylang.v2.parser import QueryAST
 
 def test_upper_snake_str_validation():
     """

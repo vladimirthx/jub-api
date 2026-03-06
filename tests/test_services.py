@@ -4,7 +4,7 @@ import datetime as DT
 
 import jubapi.repositories.v2 as RV4
 import jubapi.models.v2 as MV4
-import jubapi.services.v4 as SV4
+import jubapi.services.v2 as SV4
 from jubapi.db import CollectionNames
 @pytest.fixture(scope="function")
 async def db():

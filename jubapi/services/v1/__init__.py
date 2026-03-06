@@ -1,14 +1,16 @@
-from jubapi.repositories.products import ProductsRepository
-from jubapi.repositories.observatory import ObservatoriesRepository
-from jubapi.repositories.catalog import CatalogsRepository
+
 from option import Result,Ok,Err
-from jubapi.dto.observatory import ObservatoryDTO,LevelCatalogDTO
-from jubapi.dto.product import ProductDTO
-from jubapi.dto import ProductFilter
-from jubapi.models import LevelCatalog, Observatory,Catalog,CatalogItem,Product,Level
-from jubapi.errors import JubError,AlreadyExists,NotFound,UnknownError
 from  typing import List,Dict,Any
-from jubapi.dto.catalog import CatalogDTO
+# 
+from jubapi.repositories.v1.products import ProductsRepository
+from jubapi.repositories.v1.observatory import ObservatoriesRepository
+from jubapi.repositories.v1.catalog import CatalogsRepository
+from jubapi.dto.v1.observatory import ObservatoryDTO,LevelCatalogDTO
+from jubapi.dto.v1.product import ProductDTO
+from jubapi.dto.v1.catalog import CatalogDTO
+from jubapi.dto.v1 import ProductFilter
+from jubapi.models.v1 import LevelCatalog, Observatory,Catalog,CatalogItem,Product,Level
+from jubapi.errors import JubError,AlreadyExists,NotFound,UnknownError
 from bson import ObjectId
 
 

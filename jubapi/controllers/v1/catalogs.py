@@ -2,12 +2,12 @@ import os
 import time as T
 from typing import List
 from fastapi import APIRouter,Depends,Response,HTTPException
-from jubapi.dto.catalog import CatalogDTO
-from jubapi.services import CatalogsService
+from jubapi.dto.v1.catalog import CatalogDTO
+from jubapi.services.v1 import CatalogsService
 # 
-from jubapi.repositories.catalog import CatalogsRepository
+from jubapi.repositories.v1.catalog import CatalogsRepository
 from jubapi.db import get_collection
-from jubapi.services import CatalogsService
+from jubapi.services.v1 import CatalogsService
 from jubapi.log.log import Log
 import jubapi.config as CX
 

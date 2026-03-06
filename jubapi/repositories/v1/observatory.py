@@ -1,13 +1,12 @@
-# from pymongo.collection import Collection
 from pymongo.results import DeleteResult
 from motor.motor_asyncio import AsyncIOMotorCollection
 from option import NONE, Option,Some,Result,Ok,Err
 from typing import List,Any,Dict
 import string as S
 from nanoid import generate as nanoid
-from jubapi.dto.observatory import ObservatoryDTO,LevelCatalogDTO
+from jubapi.dto.v1.observatory import ObservatoryDTO,LevelCatalogDTO
 from jubapi.utils.utils import Utils as U
-from jubapi.models import Observatory,LevelCatalog
+from jubapi.models.v1 import Observatory,LevelCatalog
 
 
 

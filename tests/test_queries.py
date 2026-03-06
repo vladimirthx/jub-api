@@ -1,14 +1,13 @@
 import pytest
 import asyncio
-from jubapi.querylang.v4.parser import QueryAST
+from jubapi.querylang.v2.parser import QueryAST
 from motor.motor_asyncio import AsyncIOMotorClient as MongoClient
 import datetime as DT
 
 import jubapi.repositories.v2 as RV4
 import jubapi.models.v2 as MV4
-import jubapi.services.v4 as SV4
+import jubapi.services.v2 as SV4
 from jubapi.db import CollectionNames
-from tests.deprecated.v3.test_services import catalog_service
 
 
 @pytest.fixture(scope="function")
@@ -199,13 +198,14 @@ async def test_vt_multi_date_product(services):
 
 @pytest.mark.asyncio
 async def test_vt_math_operator_range(services):
-    search_srv = services["search"]
+    search_srv:SV4.SearchService = services["search"]
     
     # Query: Time between 2021 and 2024 inclusive
     res = await search_srv.execute_query("jub.v1.VT(>= 2021 AND <= 2024)", "obs_test")
     
     assert res.is_ok
     products = [p.product_id for p in res.unwrap()]
+    print(f"Products found in range query: {products}")
     assert "p1" in products # 2024
     assert "p2" in products # 2023
     assert "p3" not in products # 2020 is too early, 2025 is too late

@@ -1,5 +1,5 @@
 from pydantic import BaseModel,Field
-from jubapi.models import CatalogKind
+from jubapi.models.v1 import CatalogKind
 from typing import List,Optional
 
 class LevelDTO(BaseModel):

@@ -1,7 +1,7 @@
 import pytest
 from jubapi.server import app
 from fastapi.testclient import TestClient
-from jubapi.models import Catalog,CatalogKind,CatalogItem
+from jubapi.models.v1 import Catalog,CatalogKind,CatalogItem
 from uuid import uuid4
 client = TestClient(app)
 
