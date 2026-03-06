@@ -68,7 +68,7 @@ async def create_observatory(
 )
 async def delete_observatory_by_obid(obid:str, observatory_service:ObservatoriesService = Depends(get_service)):
     exists = await observatory_service.find_by_obid(obid=obid)
-    if exists.is_err:
+    if exists.is_err: 
         raise HTTPException(detail="Observatory(obid={}) not found.".format(obid), status_code=404)
     else:
         response = await observatory_service.delete_by_obid(obid=obid)
