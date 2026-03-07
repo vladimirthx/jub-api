@@ -233,6 +233,18 @@ class ObservatoriesService:
         """
         return await self.repository.find_all(query=query,skip=skip,limit=limit)
 
+    async def delete_by_obid(self, obid:str)->Result[str,JubError]:
+        """
+        Permanently removes an observatory from the database using its unique identifier.
+
+        Args:
+            obid (str): The unique identifier of the observatory to delete.
+        """
+        try:
+            x = await self.repository.delete_by_obid(obid=obid)
+            return Ok(obid)
+        except Exception as e:
+            return Err(e)
 
 class ProductsService:
     """

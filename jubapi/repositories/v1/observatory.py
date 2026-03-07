@@ -79,5 +79,5 @@ class ObservatoriesRepository(object):
             print(e)
             return None
 
-    def delete_by_obid(self,obid:str)->DeleteResult:
-        return self.collection.delete_one({"obid": obid})
+    async def delete_by_obid(self,obid:str)->DeleteResult:
+        return await self.collection.delete_one({"obid": obid})
