@@ -17,13 +17,11 @@ log       = Log(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan function for the FastAPI application. This function is used to connect to the MongoDB database when the application starts and to close the connection when the application stops.
-    """
     await connect_to_mongo()
     yield 
     await close_mongo_connection()
 
+    
 app = FastAPI(
     lifespan  = lifespan,
     root_path = CX.JUB_OPENAPI_PREFIX,
