@@ -129,7 +129,7 @@ An observatory is an object that contain N catalogs. This object is used in the 
     }
   ],
   "tags": [
-    "<String>": "<String>"
+    "<String>"
   ]
 }
 
