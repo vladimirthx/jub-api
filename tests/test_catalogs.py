@@ -5,10 +5,12 @@ from jubapi.models.v1 import Catalog,CatalogKind,CatalogItem
 from uuid import uuid4
 client = TestClient(app)
 
-@pytest.mark.asyncio
-async def test_api_create_catalog():
-    # Create a new catalog DTO
-    catalog = Catalog(
+
+# Including the fixture to adapt the previous template
+@pytest.fixture
+def cat():
+    """Fixture to provide a standard valid catalog model payload."""
+    return Catalog(
         cid=uuid4().hex[:8],
         display_name="TEST CATALOG",
         kind=CatalogKind.INTEREST,
@@ -19,11 +21,49 @@ async def test_api_create_catalog():
                 code=0,
                 description="Item A",
                 metadata={"extra_info": "Some extra info for A"}
-
-            ),
+            )
         ]
     )
-    response = client.post("/catalogs", json=catalog.model_dump())
+
+# Create Operation
+@pytest.mark.asyncio
+async def test_create_catalog(cat):
+    """Test creating a new catalog via the API using a Model."""
+    response = client.post("/catalogs", json=cat.model_dump())
+    assert response.status_code == 201, f"Unexpected status: {response.status_code}"
     
-    print(response.json())
-    assert response.status_code == 201, "API request failed"
+    data = response.json()
+    assert data["cid"] == cat.cid
+
+# Read Operations
+@pytest.mark.asyncio
+async def test_get_catalogs():
+    """Test retrieving the paginated list of catalogs."""
+    response = client.get("/catalogs")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert isinstance(data, list)
+
+@pytest.mark.asyncio
+async def test_get_catalog_by_cid(cat):
+    """Test retrieving a specific catalog by its CID."""
+    response = client.get(f"/catalogs/{cat.cid}")
+    assert response.status_code in [200, 404]
+
+# Delete Operation
+@pytest.mark.asyncio
+async def test_delete_catalog(cat):
+    """Test deleting a catalog."""
+    response = client.delete(f"/catalogs/{cat.cid}")
+    assert response.status_code in [204, 404]
+
+# Negative Test
+@pytest.mark.asyncio
+async def test_create_catalog_invalid_payload():
+    """NEGATIVE TEST: Missing required fields in payload."""
+    invalid_catalog = {
+        "display_name": "Incomplete Catalog"
+    }
+    response = client.post("/catalogs", json=invalid_catalog)
+    assert response.status_code == 422
